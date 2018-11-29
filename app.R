@@ -13,11 +13,11 @@ ui <- function(request) {dashboardPage(
     dashboardSidebar(
 
       selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]"), selected = NULL),
-      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle/Seurat")),
+      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle2","Seurat")),
       textInput(inputId="group", label="Group", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="projectid", label="Project ID", value = "", width = NULL, placeholder = NULL),
-      textInput(inputId="pathtodata", label="Data folder", value = "", width = NULL, placeholder = NULL),
+      textInput(inputId="pathtodata", label="Data path", value = "", width = NULL, placeholder = NULL),
       actionButton(inputId="adddataset", label="Select dataset"),
       textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
       actionButton("selectgenes", "Select genes"),
@@ -48,8 +48,14 @@ server <- function(input, output, session) {
 
 ################################
     #imports depend on selected format!
-    library(RaceID,lib.loc=Rlib)
-    library(ggplot2,lib.loc=Rlib)
+    #load packages in function of the input format (or use namespace loading...)
+    observe({if (input$selectformat == "RaceID3") {
+        library(RaceID,lib.loc=Rlib)
+        library(ggplot2,lib.loc=Rlib) 
+    } else if (input$selectformat == "Monocle2"){
+        library(monocle,lib.loc=Rlib)
+    } else if (input$selectformat == "Seurat"){
+        library(Seurat,lib.loc=Rlib)} })
     
 
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
@@ -89,7 +95,18 @@ server <- function(input, output, session) {
            sctmp<-load(datPath, envir = myEnv)
            values$sc <- myEnv[[sctmp]]
         }
-      
+       sc<-values$sc
+       cluinit<-max(sc@cluster$kpart)
+       output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
+       
+       observeEvent(input$plotclu, {
+       if(isolate(input$numclu)!=max(sc@cluster$kpart)){   
+           scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=isolate(input$numclu))
+           scnew<-findoutliers(scnew)
+           values$sc<-scnew
+           sc<-values$sc}
+       output$tsneClu<-renderPlot({plotmap(sc,final=FALSE)})
+       },ignoreInit=TRUE)#end observe plotclu
         
         #this is RaceID specific
         #render the head
@@ -247,6 +264,16 @@ server <- function(input, output, session) {
                                                                   ) 
                                                               )
                                                           ),
+                                                ##
+                                                tabPanel(title="Cluster.Number",
+                                                         fluidPage(
+                                                           box(plotOutput("tsneClu"),width=5),
+                                                           box(title = "Plot controls",uiOutput("CluCtrl")),
+                                                           box(title="Method Description",renderText("Kmedoids clustering was run on logpearson distances between cells.")),
+                                                           actionButton(inputId="plotclu",label="Plot clusters on tsne")
+                                                         )
+                                                         
+                                                ),##
                                                 
                                                 tabPanel(title="Annotation.Table",
                                                          fluidRow(
@@ -259,7 +286,7 @@ server <- function(input, output, session) {
                                                 ),
                                                    tabPanel(title="Tsne.Map",
                                                       fluidPage(
-                                                          box(plotOutput("tsneAgg"),width=4),
+                                                          box(plotOutput("tsneAgg"),width=5),
                                                           box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE")),
                                                           box(title="Method Description",renderText("(Log) counts were aggregated over selected genes and the expression levels were colour-coded on the tsne map.")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
