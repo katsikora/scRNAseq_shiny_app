@@ -131,10 +131,20 @@ server <- function(input, output, session) {
           topn<-topn[with(topn, order(Cluster, padj)),]
           output$topn<-renderTable({topn})
           genes <- unique(topn$Gene)
+          values$topn<-topn
           output$geneheatmap<-renderPlot({plotmarkergenes(sc,genes)})
           })#end of observe
            
        },ignoreInit=TRUE)#end observe getmkrs
+        
+        output$downloadTable <- downloadHandler(
+          filename = function() {
+            paste("sc.clu",input$numclu,".top",input$numDEGs, ".tsv", sep = "")
+          },
+          content = function(file) {
+            write.table(values$topn, file, row.names = FALSE,sep="\t",quote=FALSE)
+          }
+        )
         
         #this is RaceID specific
         #render the head
@@ -300,8 +310,11 @@ server <- function(input, output, session) {
                                                            box(title="Method Description",renderText("Kmedoids clustering was run on logpearson distances between cells.")),
                                                            box(actionButton(inputId="plotclu",label="Plot clusters on tsne"),
                                                            actionButton(inputId="getmkrs",label="Get marker genes"),width=6),
-                                                           box(plotOutput("geneheatmap")),width=5),
+                                                           box(plotOutput("geneheatmap"),width=5),
+                                                           box(downloadButton(outputId="downloadTable", label="Download table"),width=5),
                                                            box(title="Marker genes",sliderInput("numDEGs", "Number of top markers",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=5)
+                                                         
+                                                         )
 
                                                 ),##
                                                 
