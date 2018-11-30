@@ -64,7 +64,7 @@ server <- function(input, output, session) {
     values$rowsSel<-""
     values$cList<-"All"
     values$inGenes=""
-
+    
 
 ################################
     observeEvent(input$adddataset, {
@@ -96,6 +96,7 @@ server <- function(input, output, session) {
            values$sc <- myEnv[[sctmp]]
         }
        sc<-values$sc
+       sc@cpart<-sc@cluster$kpart
        cluinit<-max(sc@cluster$kpart)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
        
@@ -103,10 +104,37 @@ server <- function(input, output, session) {
        if(isolate(input$numclu)!=max(sc@cluster$kpart)){   
            scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=isolate(input$numclu))
            scnew<-findoutliers(scnew)
+           scnew@cpart<-scnew@cluster$kpart
            values$sc<-scnew
            sc<-values$sc}
        output$tsneClu<-renderPlot({plotmap(sc,final=FALSE)})
        },ignoreInit=TRUE)#end observe plotclu
+       
+        observeEvent(input$getmkrs, {
+         if(isolate(input$numclu)==max(sc@cluster$kpart)){   
+             res10L<-lapply(unique(sc@cpart),function(X){
+             dg<-clustdiffgenes(sc,X,pvalue=.01)
+             dgsub<-dg[dg$fc>=2,]
+             if(nrow(dgsub)>0){
+               dg<-dgsub
+               dg<-head(dg,n=10)
+               dg$Cluster<-X
+               dg$Gene<-rownames(dg)}else{dg<-NULL}
+             return(dg)})
+           top10<-as.data.frame(do.call(rbind,res10L))
+           top10<-top10[top10$padj<0.05,]
+           top10<-top10[with(top10, order(Cluster, padj)),]} #
+ 
+          observe({resnL<-lapply(unique(top10$Cluster),function(X){
+            head(top10[top10$Cluster %in% X,],n=input$numDEGs)})
+          topn<-as.data.frame(do.call(rbind,resnL))
+          topn<-topn[with(topn, order(Cluster, padj)),]
+          output$topn<-renderTable({topn})
+          genes <- unique(topn$Gene)
+          output$geneheatmap<-renderPlot({plotmarkergenes(sc,genes)})
+          })#end of observe
+           
+       },ignoreInit=TRUE)#end observe getmkrs
         
         #this is RaceID specific
         #render the head
@@ -267,12 +295,14 @@ server <- function(input, output, session) {
                                                 ##
                                                 tabPanel(title="Cluster.Number",
                                                          fluidPage(
-                                                           box(plotOutput("tsneClu"),width=5),
+                                                           box(plotOutput("tsneClu"),width=5,height=600),
                                                            box(title = "Plot controls",uiOutput("CluCtrl")),
                                                            box(title="Method Description",renderText("Kmedoids clustering was run on logpearson distances between cells.")),
-                                                           actionButton(inputId="plotclu",label="Plot clusters on tsne")
-                                                         )
-                                                         
+                                                           box(actionButton(inputId="plotclu",label="Plot clusters on tsne"),
+                                                           actionButton(inputId="getmkrs",label="Get marker genes"),width=6),
+                                                           box(plotOutput("geneheatmap")),width=5),
+                                                           box(title="Marker genes",sliderInput("numDEGs", "Number of top markers",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=5)
+
                                                 ),##
                                                 
                                                 tabPanel(title="Annotation.Table",
