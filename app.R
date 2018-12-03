@@ -96,6 +96,8 @@ server <- function(input, output, session) {
            values$sc <- myEnv[[sctmp]]
         }
        sc<-values$sc
+       
+       ##RaceID
        sc@cpart<-sc@cluster$kpart
        cluinit<-max(sc@cluster$kpart)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
