@@ -5,6 +5,8 @@ library(shinydashboard,lib.loc=Rlib)
 library(rhandsontable,lib.loc=Rlib)
 library(DT,lib.loc=Rlib)
 
+#source("aux.R")
+
 #options(shiny.maxRequestSize=5000*1024^2)
 
 ui <- function(request) {dashboardPage(
@@ -47,15 +49,10 @@ server <- function(input, output, session) {
 
 
 ################################
+    source("aux.R")
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
-    observe({if (input$selectformat == "RaceID3") {
-        library(RaceID,lib.loc=Rlib)
-        library(ggplot2,lib.loc=Rlib) 
-    } else if (input$selectformat == "Monocle2"){
-        library(monocle,lib.loc=Rlib)
-    } else if (input$selectformat == "Seurat"){
-        library(Seurat,lib.loc=Rlib)} })
+    observe(load_libs(input$selectformat,Rlib))
     
 
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
@@ -68,8 +65,7 @@ server <- function(input, output, session) {
 
 ################################
     observeEvent(input$adddataset, {
-      
-      #dsel<-c("fastq.gz"="Project","bam"="Analysis")
+      ######################################################################################################      
       psel<-c("Monocle/Seurat"="*.seuset.RData$","RaceID3"="*.RID3set.RData$") 
       inFormat<-isolate(input$selectformat)
       
@@ -96,48 +92,37 @@ server <- function(input, output, session) {
            values$sc <- myEnv[[sctmp]]
         }
        sc<-values$sc
+    ###########################################################################################################   
        
-       ##RaceID
-       sc@cpart<-sc@cluster$kpart
-       cluinit<-max(sc@cluster$kpart)
+       cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
-       
+    ###########################################################################################################      
        observeEvent(input$plotclu, {
-       if(isolate(input$numclu)!=max(sc@cluster$kpart)){   
-           scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=isolate(input$numclu))
-           scnew<-findoutliers(scnew)
-           scnew@cpart<-scnew@cluster$kpart
-           values$sc<-scnew
-           sc<-values$sc}
-       output$tsneClu<-renderPlot({plotmap(sc,final=FALSE)})
+           values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
+           sc<-values$sc
+       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
        },ignoreInit=TRUE)#end observe plotclu
        
+    ###########################################################################################################   
+       
         observeEvent(input$getmkrs, {
-         if(isolate(input$numclu)==max(sc@cluster$kpart)){   
-             res10L<-lapply(unique(sc@cpart),function(X){
-             dg<-clustdiffgenes(sc,X,pvalue=.01)
-             dgsub<-dg[dg$fc>=2,]
-             if(nrow(dgsub)>0){
-               dg<-dgsub
-               dg<-head(dg,n=10)
-               dg$Cluster<-X
-               dg$Gene<-rownames(dg)}else{dg<-NULL}
-             return(dg)})
-           top10<-as.data.frame(do.call(rbind,res10L))
-           top10<-top10[top10$padj<0.05,]
-           top10<-top10[with(top10, order(Cluster, padj)),]} #
- 
-          observe({resnL<-lapply(unique(top10$Cluster),function(X){
-            head(top10[top10$Cluster %in% X,],n=input$numDEGs)})
+         sc<-values$sc
+         top10<-reactive(get_top10(input$selectformat,sc)) #
+    ######################################################################
+           observe({resnL<-lapply(unique(top10()$Cluster),function(X){
+            head(top10()[top10()$Cluster %in% X,],n=input$numDEGs)})
           topn<-as.data.frame(do.call(rbind,resnL))
-          topn<-topn[with(topn, order(Cluster, padj)),]
+          mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="padj") ###check Seurat
+          topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
           output$topn<-renderTable({topn})
           genes <- unique(topn$Gene)
           values$topn<-topn
-          output$geneheatmap<-renderPlot({plotmarkergenes(sc,genes)})
+          output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,genes)})
           })#end of observe
            
        },ignoreInit=TRUE)#end observe getmkrs
+       
+    ####################################################################   
         
         output$downloadTable <- downloadHandler(
           filename = function() {
