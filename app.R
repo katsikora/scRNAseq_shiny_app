@@ -132,10 +132,11 @@ server <- function(input, output, session) {
             write.table(values$topn, file, row.names = FALSE,sep="\t",quote=FALSE)
           }
         )
+    #####################################################################    
         
-        #this is RaceID specific
         #render the head
-        ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
+        sc<-values$sc
+        ntemp<-render_data_head(input$selectformat,sc)
         values$ndata<-ntemp[rowSums(ntemp)>0,]
         ndata<-values$ndata
         output$datHead<-renderTable({ndata[1:10,1:min(8,ncol(ndata))]},caption="Normalized data",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
@@ -226,7 +227,7 @@ server <- function(input, output, session) {
             if(length(nv)>0){
                 nt<-isolate(input$tsnetit)
                 #ifelse(length(nv)==1,nt<-nv,nt<-"Selected genes")
-            output$tsneAgg<-renderPlot({plotexpmap(sc,nv,n=nt,logsc=as.logical(input$tsnelog))})
+            output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog))})  ###
             
             }#fi
             ###produce top correlated genes for aggregated selected gene(s)

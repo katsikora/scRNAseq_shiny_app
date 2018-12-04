@@ -94,3 +94,25 @@ get_marker_plot<-function(pg_choice,sc,genes){
     DoHeatmap(object = sc,genes.use = genes,slim.col.label = TRUE,remove.key = TRUE)
   }
 }
+
+render_data_head<-function(pg_choice,sc){
+  if(pg_choice=="RaceID3"){
+    ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
+  }else if (pg_choice == "Monocle2"){
+    ntemp<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+  }else if (pg_choice == "Seurat"){
+    
+  }
+  return(ntemp)
+}
+
+get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
+  if(pg_choice=="RaceID3"){
+    plotexpmap(sc,nv,n=nt,logsc=tsnelog)
+  }else if (pg_choice == "Monocle2"){
+    
+  }else if (pg_choice == "Seurat"){
+    
+  }
+  
+}
