@@ -2,6 +2,7 @@ load_libs<-function(pg_choice,Rlib){
   if(pg_choice=="RaceID3"){library(RaceID,lib.loc=Rlib)
     library(ggplot2,lib.loc=Rlib) } else if (pg_choice == "Monocle2"){
       library(monocle,lib.loc=Rlib)
+      library(scales,lib.loc=Rlib)
     } else if (pg_choice == "Seurat"){
       library(Seurat,lib.loc=Rlib)}
 }
@@ -11,29 +12,29 @@ get_cluinit<-function(pg_choice,sc){
     sc@cpart<-sc@cluster$kpart
     cluinit<-max(sc@cluster$kpart)}
    else if (pg_choice == "Monocle2"){
-    cluinit<-max(pData(sc)$Cluster)}
+    cluinit<-max(as.numeric(pData(sc)$Cluster))}
   else if (pg_choice == "Seurat"){
     cluinit<-max(sc@ident)}
   return(cluinit)
 }
 
 recluster_plot_tsne<-function(pg_choice,sc,numclu){
-  sc@cpart<-sc@cluster$kpart
-  scnew<-sc
   if(pg_choice=="RaceID3"){
+    sc@cpart<-sc@cluster$kpart
+    scnew<-sc
     if(numclu!=max(sc@cluster$kpart)){   
       scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=numclu)
       scnew<-findoutliers(scnew)
       scnew@cpart<-scnew@cluster$kpart
-      }else if (pg_choice == "Monocle2"){
-        if(numclu!=max(pData(sc)$Cluster)){
+    }}else if (pg_choice == "Monocle2"){
+       scnew<-sc
+        if(numclu!=max(as.numeric(pData(sc)$Cluster))){
         scnew <- clusterCells(sc, num_clusters=numclu)}
-      }else if (pg_choice == "Seurat"){
+    }else if (pg_choice == "Seurat"){
+       scnew<-sc
         if(numclu!=max(sc@ident)){
         scnew<-FindClusters(object =sc)}
       }
-  }
-  
   return(scnew)
 } 
 
@@ -73,6 +74,8 @@ get_top10<-function(pg_choice,sc){
          res<-res.filt
          res<-res[order(res$qval),]
          res$Cluster<-X
+         res$Gene<-rownames(res)
+         res<-subset(res,select=c("Gene","qval","num_cells_expressed","Cluster"))
        }else{res<-NULL}
        return(res)
      })
@@ -89,7 +92,15 @@ get_marker_plot<-function(pg_choice,sc,genes){
   if(pg_choice=="RaceID3"){
     plotmarkergenes(sc,genes)
   }else if (pg_choice == "Monocle2"){
-    
+    plotdat<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+    plotdat<-subset(plotdat,subset=rownames(plotdat) %in% genes)
+    plotdat2<-as.matrix(log2(plotdat+0.01))
+    #rownames(plotdat2)<-rownames(plotdat)
+    plotdat2<-plotdat2[match(genes,rownames(plotdat2)),order(as.numeric(pData(sc)$Cluster))]
+    colv<-brewer.pal(8,"Dark2")[sort(as.numeric(pData(sc)$Cluster))]
+    heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
+              col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
+              main="Gene Selection",margins=c(10,12))  
   }else if (pg_choice == "Seurat"){
     DoHeatmap(object = sc,genes.use = genes,slim.col.label = TRUE,remove.key = TRUE)
   }
@@ -110,7 +121,17 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
   if(pg_choice=="RaceID3"){
     plotexpmap(sc,nv,n=nt,logsc=tsnelog)
   }else if (pg_choice == "Monocle2"){
-    
+    plotdat<-as.data.frame(t(sc@reducedDimA),stringsAsFactors=FALSE)
+    ndata<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+    l<-apply(ndata[nv,]-.1,2,sum)+.1
+    if (tsnelog) {
+      f <- l == 0
+      l <- log2(l)
+      l[f] <- NA
+    }
+    plotdat$label<-l
+    ggplot(plotdat %>% dplyr::arrange(label), aes(x = V1, y = V2, color = label))+geom_point(size = 2)+
+      scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   }else if (pg_choice == "Seurat"){
     
   }

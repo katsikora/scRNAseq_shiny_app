@@ -50,6 +50,8 @@ server <- function(input, output, session) {
 
 ################################
     source("aux.R")
+    library(gplots,lib.loc=Rlib)
+    library(RColorBrewer,lib.loc=Rlib)
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
     observe(load_libs(input$selectformat,Rlib))
@@ -93,7 +95,7 @@ server <- function(input, output, session) {
         }
        sc<-values$sc
     ###########################################################################################################   
-       
+       #pg_choice<-isolate(input$selectformat)
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
     ###########################################################################################################      
