@@ -4,6 +4,7 @@ library(shiny,lib.loc=Rlib)
 library(shinydashboard,lib.loc=Rlib)
 library(rhandsontable,lib.loc=Rlib)
 library(DT,lib.loc=Rlib)
+#library(shinycssloaders,lib.loc=Rlib)
 
 #source("aux.R")
 
@@ -111,15 +112,15 @@ server <- function(input, output, session) {
          sc<-values$sc
          top10<-reactive(get_top10(input$selectformat,sc)) #
     ######################################################################
-           observe({resnL<-lapply(unique(top10()$Cluster),function(X){
+          observe({resnL<-lapply(unique(top10()$Cluster),function(X){
             head(top10()[top10()$Cluster %in% X,],n=input$numDEGs)})
-          topn<-as.data.frame(do.call(rbind,resnL))
-          mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="padj") ###check Seurat
-          topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
-          output$topn<-renderTable({topn})
-          genes <- unique(topn$Gene)
-          values$topn<-topn
-          output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,genes)})
+            topn<-as.data.frame(do.call(rbind,resnL))
+            mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="padj") ###check Seurat
+            topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
+            output$topn<-renderTable({topn})
+            #values$genes <- unique(topn$Gene)
+            values$topn<-topn
+            output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn)})
           })#end of observe
            
        },ignoreInit=TRUE)#end observe getmkrs
@@ -276,7 +277,7 @@ server <- function(input, output, session) {
                                                   tabPanel(title="InputData",
                                                       fluidPage(
                                                           fluidRow(
-                                                              tableOutput("datHead"),
+                                                            tableOutput("datHead"),
                                                               tableOutput("countDatHead")
                                                                    ),
                                                           #fluidRow(
@@ -300,7 +301,7 @@ server <- function(input, output, session) {
                                                            box(title="Method Description",renderText("Kmedoids clustering was run on logpearson distances between cells.")),
                                                            box(actionButton(inputId="plotclu",label="Plot clusters on tsne"),
                                                            actionButton(inputId="getmkrs",label="Get marker genes"),width=6),
-                                                           box(plotOutput("geneheatmap"),width=5),
+                                                           box(plotOutput("geneheatmap"),width=6),
                                                            box(downloadButton(outputId="downloadTable", label="Download table"),width=5),
                                                            box(title="Marker genes",sliderInput("numDEGs", "Number of top markers",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=5)
                                                          

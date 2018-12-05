@@ -88,16 +88,29 @@ get_top10<-function(pg_choice,sc){
   return(top10)
 }
 
-get_marker_plot<-function(pg_choice,sc,genes){
+get_marker_plot<-function(pg_choice,sc,topn){
+  qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+  col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  set.seed(123)
+  genes<-unique(topn$Gene)
   if(pg_choice=="RaceID3"){
-    plotmarkergenes(sc,genes)
+    #plotmarkergenes(sc,genes)
+    plotdat<-as.data.frame(as.matrix(sc@ndata[rowSums(as.matrix(sc@ndata))>0,]),stringsAsFactors=FALSE)
+    plotdat<-subset(plotdat,subset=rownames(plotdat) %in% genes)
+    plotdat2<-as.matrix(log2(plotdat+0.01))
+    #rownames(plotdat2)<-rownames(plotdat)
+    plotdat2<-plotdat2[match(genes,rownames(plotdat2)),order(as.numeric(sc@cpart))]
+    colv<-sample(col_vector,max(as.numeric(sc@cpart)))[sort(as.numeric(sc@cpart))]
+    heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
+              col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
+              main="Gene Selection",margins=c(10,12))
   }else if (pg_choice == "Monocle2"){
     plotdat<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
     plotdat<-subset(plotdat,subset=rownames(plotdat) %in% genes)
     plotdat2<-as.matrix(log2(plotdat+0.01))
     #rownames(plotdat2)<-rownames(plotdat)
     plotdat2<-plotdat2[match(genes,rownames(plotdat2)),order(as.numeric(pData(sc)$Cluster))]
-    colv<-brewer.pal(8,"Dark2")[sort(as.numeric(pData(sc)$Cluster))]
+    colv<-sample(col_vector,max(as.numeric(pData(sc)$Cluster)))[sort(as.numeric(spData(sc)$Cluster))]
     heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))  
