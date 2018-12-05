@@ -110,7 +110,7 @@ get_marker_plot<-function(pg_choice,sc,topn){
     plotdat2<-as.matrix(log2(plotdat+0.01))
     #rownames(plotdat2)<-rownames(plotdat)
     plotdat2<-plotdat2[match(genes,rownames(plotdat2)),order(as.numeric(pData(sc)$Cluster))]
-    colv<-sample(col_vector,max(as.numeric(pData(sc)$Cluster)))[sort(as.numeric(spData(sc)$Cluster))]
+    colv<-sample(col_vector,max(as.numeric(pData(sc)$Cluster)))[sort(as.numeric(pData(sc)$Cluster))]
     heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))  
