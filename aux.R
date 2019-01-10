@@ -4,7 +4,7 @@ load_libs<-function(pg_choice,Rlib){
       library(monocle,lib.loc=Rlib)
       library(scales,lib.loc=Rlib)
     } else if (pg_choice == "Seurat"){
-      library(Seurat)
+      library(Seurat,lib.loc=Rlib)
       } #,lib.loc=Rlib
 }
 
