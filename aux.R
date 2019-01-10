@@ -4,7 +4,8 @@ load_libs<-function(pg_choice,Rlib){
       library(monocle,lib.loc=Rlib)
       library(scales,lib.loc=Rlib)
     } else if (pg_choice == "Seurat"){
-      library(Seurat,lib.loc=Rlib)}
+      library(Seurat)
+      } #,lib.loc=Rlib
 }
 
 get_cluinit<-function(pg_choice,sc){
@@ -14,7 +15,7 @@ get_cluinit<-function(pg_choice,sc){
    else if (pg_choice == "Monocle2"){
     cluinit<-max(as.numeric(pData(sc)$Cluster))}
   else if (pg_choice == "Seurat"){
-    cluinit<-max(sc@ident)}
+    cluinit<-max(as.numeric(as.character(sc@ident)))}
   return(cluinit)
 }
 
@@ -32,8 +33,9 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
         scnew <- clusterCells(sc, num_clusters=numclu)}
     }else if (pg_choice == "Seurat"){
        scnew<-sc
-        if(numclu!=max(sc@ident)){
-        scnew<-FindClusters(object =sc)}
+        if(numclu!=max(as.numeric(as.character(sc@ident)))){
+          scnew<-FindNeighbors(object = UpdateSeuratObject(sc))
+          scnew<-FindClusters(object =scnew)}
       }
   return(scnew)
 } 
@@ -44,8 +46,9 @@ get_clu_plot<-function(pg_choice,sc){
   }else if (pg_choice == "Monocle2"){
     plot_cell_clusters(sc,1, 2, color="Cluster")
   }else if (pg_choice == "Seurat"){
-    TSNEPlot(object = sc)
-  }
+    if(!class(sc) %in% "Seurat"){
+    DimPlot(object = UpdateSeuratObject(sc),reduction="tsne")
+  }else{DimPlot(object = sc,reduction="tsne")}}
 }
 
 get_top10<-function(pg_choice,sc){
@@ -82,8 +85,11 @@ get_top10<-function(pg_choice,sc){
      top10<-as.data.frame(do.call(rbind,res10L))
      top10<-top10[with(top10, order(Cluster, qval)),]
    }else if (pg_choice == "Seurat"){
-     top10 <- markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+     markers<-FindAllMarkers(object = UpdateSeuratObject(sc),only.pos = TRUE,min.pct = 0.25,thresh.use = 0.25)
+     top10 <- markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(10, avg_logFC)
      colnames(top10)[colnames(top10) %in% "cluster"]<-"Cluster"
+     colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
+     top10<-as.data.frame(top10,stringsAsFactors=FALSE)
    }
   return(top10)
 }
@@ -115,7 +121,7 @@ get_marker_plot<-function(pg_choice,sc,topn){
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))  
   }else if (pg_choice == "Seurat"){
-    DoHeatmap(object = sc,genes.use = genes,slim.col.label = TRUE,remove.key = TRUE)
+    DoHeatmap(object = UpdateSeuratObject(sc),features=genes)
   }
 }
 
@@ -125,7 +131,7 @@ render_data_head<-function(pg_choice,sc){
   }else if (pg_choice == "Monocle2"){
     ntemp<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }else if (pg_choice == "Seurat"){
-    
+   ntemp<-as.data.frame(expm1(sc@data)) 
   }
   return(ntemp)
 }
@@ -146,7 +152,9 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
     ggplot(plotdat %>% dplyr::arrange(label), aes(x = V1, y = V2, color = label))+geom_point(size = 2)+
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   }else if (pg_choice == "Seurat"){
-    
+    if(length(nv)==1){
+      FeaturePlot(UpdateSeuratObject(sc),nv,cols = c("lightgrey", "blue"),ncol = 1) 
+    }
   }
   
 }

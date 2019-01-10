@@ -115,7 +115,7 @@ server <- function(input, output, session) {
           observe({resnL<-lapply(unique(top10()$Cluster),function(X){
             head(top10()[top10()$Cluster %in% X,],n=input$numDEGs)})
             topn<-as.data.frame(do.call(rbind,resnL))
-            mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="padj") ###check Seurat
+            mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="p_val_adj") ###check Seurat
             topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
             output$topn<-renderTable({topn})
             #values$genes <- unique(topn$Gene)
