@@ -4,11 +4,8 @@ library(shiny,lib.loc=Rlib)
 library(shinydashboard,lib.loc=Rlib)
 library(rhandsontable,lib.loc=Rlib)
 library(DT,lib.loc=Rlib)
-#library(shinycssloaders,lib.loc=Rlib)
 
-#source("aux.R")
 
-#options(shiny.maxRequestSize=5000*1024^2)
 
 ui <- function(request) {dashboardPage(
     dashboardHeader(title = "Dataset selection"),
@@ -96,7 +93,6 @@ server <- function(input, output, session) {
         }
        sc<-values$sc
     ###########################################################################################################   
-       #pg_choice<-isolate(input$selectformat)
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
     ###########################################################################################################      
@@ -118,7 +114,6 @@ server <- function(input, output, session) {
             mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="p_val_adj") ###check Seurat
             topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
             output$topn<-renderTable({topn})
-            #values$genes <- unique(topn$Gene)
             values$topn<-topn
             output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn)})
           })#end of observe
@@ -175,11 +170,8 @@ server <- function(input, output, session) {
     
         misc<-observe({req(input$gtf_rows_selected)
                       values$rowsSel<-input$gtf_rows_selected})
-        #output$debug2<-renderText({paste0(values$rowsSel,collapse=" ")})
-                
-        
-#
-               observeEvent(input$selectgenes,{
+
+      observeEvent(input$selectgenes,{
           inGenesL<-isolate(input$geneid)
           if(inGenesL!=""){
              inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
@@ -229,8 +221,7 @@ server <- function(input, output, session) {
             
             if(length(nv)>0){
                 nt<-isolate(input$tsnetit)
-                #ifelse(length(nv)==1,nt<-nv,nt<-"Selected genes")
-            output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog))})  ###
+                output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog))})  
             
             }#fi
             ###produce top correlated genes for aggregated selected gene(s)
