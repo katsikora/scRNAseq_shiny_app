@@ -1,5 +1,8 @@
 ## app.R ##
-Rlib="/data/boehm/group/shiny_apps/Rlibs3.5.0"
+#Rlib="/data/boehm/group/shiny_apps/Rlibs3.5.0"
+Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
+
+library(scales,lib.loc=Rlib)
 library(shiny,lib.loc=Rlib)
 library(shinydashboard,lib.loc=Rlib)
 library(rhandsontable,lib.loc=Rlib)
@@ -12,7 +15,7 @@ ui <- function(request) {dashboardPage(
     ## Sidebar content
     dashboardSidebar(
 
-      selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]"), selected = NULL),
+      selectInput(inputId="genome", label="Select organism", choices=c("Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
       selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle2","Seurat")),
       textInput(inputId="group", label="Group", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),

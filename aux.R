@@ -1,6 +1,11 @@
 load_libs<-function(pg_choice,Rlib){
-  if(pg_choice=="RaceID3"){library(RaceID,lib.loc=Rlib)
+  if(pg_choice=="RaceID3"){
+    library(Matrix,lib.loc=Rlib)
+    library(RaceID,lib.loc=Rlib)
     library(ggplot2,lib.loc=Rlib) } else if (pg_choice == "Monocle2"){
+      library(VGAM, lib.loc=Rlib)
+      library(irlba, lib.loc=Rlib)
+      library(DDRTree, lib.loc=Rlib)
       library(monocle,lib.loc=Rlib)
       library(scales,lib.loc=Rlib)
     } else if (pg_choice == "Seurat"){
