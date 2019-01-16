@@ -16,7 +16,7 @@ ui <- function(request) {dashboardPage(
     dashboardSidebar(
 
       selectInput(inputId="genome", label="Select organism", choices=c("Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
-      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle2/Seurat")),
+      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle")),
       textInput(inputId="group", label="Group", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="projectid", label="Project ID", value = "", width = NULL, placeholder = NULL),
@@ -68,8 +68,8 @@ server <- function(input, output, session) {
 
 ################################
     observeEvent(input$adddataset, {
-      ######################################################################################################   THIS IS CURRENTLY NOT IMPLEMENTED   
-      psel<-c("Monocle/Seurat"="*.mono.set.RData$","RaceID3"="*.RID3set.RData$") 
+      ######################################################################################################      
+      psel<-c("Monocle"="*.mono.set.RData$","RaceID3"="^sc.minT*.RData$") 
       inFormat<-isolate(input$selectformat)
       
       if((input$group!="")&(input$owner!="")&(input$projectid!="")&(input$pathtodata=="")){
@@ -78,7 +78,10 @@ server <- function(input, output, session) {
         inProjectID<-isolate(input$projectid)
   
         values$datdir<-system(sprintf("find /data/%s/sequencing_data -name Analysis_%s_%s_%s -type d | sort",tolower(gsub("-.+","",inGroup)),inProjectID,inOwner,inGroup),intern=TRUE) 
-        values$datpath<-dir(values$datdir,pattern=psel[inFormat],full.names=TRUE,recursive=TRUE)
+        details<-file.info(dir(datdir,pattern="*.mono.set.RData$",full.names=TRUE,recursive=TRUE))
+        details = details[with(details, order(as.POSIXct(mtime),decreasing=TRUE)), ]
+        
+        values$datpath<-rownames(details)[1]
               }
       
       else if ((input$group=="")&(input$owner=="")&(input$projectid=="")&(input$pathtodata!="")){
@@ -95,7 +98,7 @@ server <- function(input, output, session) {
            values$sc <- myEnv[[sctmp]]
         }
        sc<-values$sc
-    ###########################################################################################################   END OF NOT IMPLEMENTED
+    ###########################################################################################################   
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
     ###########################################################################################################      
@@ -109,19 +112,25 @@ server <- function(input, output, session) {
        
         observeEvent(input$getmkrs, {
          sc<-values$sc
-         top10<-reactive(get_top10(input$selectformat,sc)) #
+         top10<-get_top10(input$selectformat,sc) #
     ######################################################################
-          observe({resnL<-lapply(unique(top10()$Cluster),function(X){
-            head(top10()[top10()$Cluster %in% X,],n=input$numDEGs)})
-            topn<-as.data.frame(do.call(rbind,resnL))
-            mdict<-c("RaceID3"="padj","Monocle2/Seurat"="p_val_adj")
-            topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
-            output$topn<-renderTable({topn})
-            values$topn<-topn
-            output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn)})
-          })#end of observe
+         observeEvent(input$numDEGs, { 
+             req(input$getmkrs)            
+             resnL<-lapply(unique(top10$Cluster),function(X){
+               head(top10[top10$Cluster %in% X,],n=input$numDEGs)})
+             topn<-as.data.frame(do.call(rbind,resnL))
+             mdict<-c("RaceID3"="padj","Monocle"="p_val_adj")
+             topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
+             output$topn<-renderTable({topn})
+             values$topn<-topn
+             output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn)})
+             
+           })#end of observe numDEGs
+          
            
        },ignoreInit=TRUE)#end observe getmkrs
+       
+       
        
     ####################################################################   
         
