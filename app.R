@@ -16,7 +16,7 @@ ui <- function(request) {dashboardPage(
     dashboardSidebar(
 
       selectInput(inputId="genome", label="Select organism", choices=c("Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
-      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle2","Seurat")),
+      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle2/Seurat")),
       textInput(inputId="group", label="Group", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="projectid", label="Project ID", value = "", width = NULL, placeholder = NULL),
@@ -68,8 +68,8 @@ server <- function(input, output, session) {
 
 ################################
     observeEvent(input$adddataset, {
-      ######################################################################################################      
-      psel<-c("Monocle/Seurat"="*.seuset.RData$","RaceID3"="*.RID3set.RData$") 
+      ######################################################################################################   THIS IS CURRENTLY NOT IMPLEMENTED   
+      psel<-c("Monocle/Seurat"="*.mono.set.RData$","RaceID3"="*.RID3set.RData$") 
       inFormat<-isolate(input$selectformat)
       
       if((input$group!="")&(input$owner!="")&(input$projectid!="")&(input$pathtodata=="")){
@@ -95,7 +95,7 @@ server <- function(input, output, session) {
            values$sc <- myEnv[[sctmp]]
         }
        sc<-values$sc
-    ###########################################################################################################   
+    ###########################################################################################################   END OF NOT IMPLEMENTED
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
     ###########################################################################################################      
@@ -114,7 +114,7 @@ server <- function(input, output, session) {
           observe({resnL<-lapply(unique(top10()$Cluster),function(X){
             head(top10()[top10()$Cluster %in% X,],n=input$numDEGs)})
             topn<-as.data.frame(do.call(rbind,resnL))
-            mdict<-c("RaceID3"="padj","Monocle2"="qval","Seurat"="p_val_adj") ###check Seurat
+            mdict<-c("RaceID3"="padj","Monocle2/Seurat"="p_val_adj")
             topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
             output$topn<-renderTable({topn})
             values$topn<-topn
@@ -178,6 +178,7 @@ server <- function(input, output, session) {
           inGenesL<-isolate(input$geneid)
           if(inGenesL!=""){
              inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
+          inGenes<-gsub("--","__",inGenes)
           values$inGenes<-inGenes
           output$genesSel<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
           output$genesSel2<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
