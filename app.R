@@ -1,22 +1,27 @@
 ## app.R ##
 #Rlib="/data/boehm/group/shiny_apps/Rlibs3.5.0"
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
+#Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.6"
 
-library(scales,lib.loc=Rlib)
-library(shiny,lib.loc=Rlib)
-library(shinydashboard,lib.loc=Rlib)
-library(rhandsontable,lib.loc=Rlib)
-library(DT,lib.loc=Rlib)
+#library(Rcpp,lib.loc=Rlib,verbose=TRUE)#,lib.loc=Rlib
+#library(scales,lib.loc=Rlib,verbose=TRUE)
+#library(shiny,lib.loc=Rlib,verbose=TRUE)
+sink("/var/log/shiny-server/sessionInfo.txt")
+print(sessionInfo())
+sink()
+library(shinydashboard,lib.loc=Rlib,verbose=TRUE)
+library(rhandsontable,lib.loc=Rlib,verbose=TRUE)
+library(DT,lib.loc=Rlib,verbose=TRUE)
 
-
+#options(shiny.error = browser)
 
 ui <- function(request) {dashboardPage(
     dashboardHeader(title = "Dataset selection"),
     ## Sidebar content
     dashboardSidebar(
 
-      selectInput(inputId="genome", label="Select organism", choices=c("Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
-      selectInput(inputId="selectformat",label="Select input file format",choices=c("RaceID3","Monocle")),
+      selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
+      selectInput(inputId="selectformat",label="Select input file format",choices=c("Please select format","RaceID3","Monocle")),
       textInput(inputId="group", label="Group", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="projectid", label="Project ID", value = "", width = NULL, placeholder = NULL),
@@ -50,12 +55,10 @@ server <- function(input, output, session) {
 
 
 ################################
-    source("aux.R")
-    library(gplots,lib.loc=Rlib)
-    library(RColorBrewer,lib.loc=Rlib)
+    source("/data/manke/sikora/shiny_apps/scRNAseq_shiny_app/aux.R")
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
-    observe(load_libs(input$selectformat,Rlib))
+    observeEvent(input$selectformat,{try(load_libs(input$selectformat,Rlib),outFile="/var/log/shiny-server/library.err")},ignoreInit=TRUE)#
     
 
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
@@ -94,18 +97,19 @@ server <- function(input, output, session) {
             values$sc<-readRDS(datPath)}
       else if (grepl("rdata$",datPath,ignore.case=TRUE)){
            myEnv<-environment()
-           sctmp<-load(datPath, envir = myEnv)
+           try(sctmp<-load(datPath, envir = myEnv),outFile="/var/log/shiny-server/RData.err")
            values$sc <- myEnv[[sctmp]]
-        }
+             }
        sc<-values$sc
+       
     ###########################################################################################################   
-       cluinit<-get_cluinit(input$selectformat,sc)
+       cluinit<-try(get_cluinit(input$selectformat,sc),outFile="/var/log/shiny-server/cluinit.err")
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
     ###########################################################################################################      
        observeEvent(input$plotclu, {
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
            sc<-values$sc
-       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
+       output$tsneClu<-try(renderPlot({get_clu_plot(input$selectformat,sc)}),outFile="/var/log/shiny-server/get_clu_plot.err")
        },ignoreInit=TRUE)#end observe plotclu
        
     ###########################################################################################################   
@@ -146,22 +150,24 @@ server <- function(input, output, session) {
         
         #render the head
         sc<-values$sc
-        ntemp<-render_data_head(input$selectformat,sc)
+        sink("/var/log/shiny-server/pData_head.txt")
+        ntemp<-try(render_data_head(input$selectformat,sc),outFile="/var/log/shiny-server/ntemp.err")
         values$ndata<-ntemp[rowSums(ntemp)>0,]
         ndata<-values$ndata
         output$datHead<-renderTable({ndata[1:10,1:min(8,ncol(ndata))]},caption="Normalized data",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
          orgv<-c("Zebrafish [zv10]"="GRCz10","Fission yeast"="SchizoSPombe_ASM294v2","Fruitfly [dm6]"="dm6","Fruitfly [dm3]"="dm3","Human [hg37]"="hs37d5","Human [hg38]"="GRCh38","Mouse [mm9]"="GRCm37","Mouse [mm10]"="GRCm38")
-        ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
-        gtf_path<-ens_dir[length(ens_dir)]
-        gtf<-as.data.frame(rtracklayer::import(gtf_path))
-        gtf<-unique(gtf[,c(1,5,10:16)])
-        gtf$GeneSym<-paste0(gtf$gene_name,"__chr",gtf$seqnames)
+        #observeEvent(input$genome,{
+            ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
+            gtf_path<-ens_dir[length(ens_dir)]
+            gtf<-as.data.frame(rtracklayer::import(gtf_path))
+            gtf<-unique(gtf[,c(1,5,10:16)])
+            gtf$GeneSym<-paste0(gtf$gene_name,"__chr",gtf$seqnames)
         
-        values$dat <- gtf
+            values$dat <- gtf
         
      
-        output$configurator<-renderUI({tagList(selectInput(inputId="gene_biotype",label="Gene Biotype:",choices=c("All",unique(as.character(gtf$gene_biotype)))),
-                                                 selectInput(inputId="seqnames",label="Chromosome:",choices=c("All",unique(as.character(gtf$seqnames))))) })  
+            output$configurator<-renderUI({tagList(selectInput(inputId="gene_biotype",label="Gene Biotype:",choices=c("All",unique(as.character(gtf$gene_biotype))),selected="All"),
+                                                 selectInput(inputId="seqnames",label="Chromosome:",choices=c("All",unique(as.character(gtf$seqnames))),selected="All")) })  
         output$gtf<-renderDT({
             
           dat<-values$dat
@@ -175,6 +181,7 @@ server <- function(input, output, session) {
          
           values$dat2<-dat
           dat},server=TRUE,options = list(autoWidth = TRUE,scrollX=TRUE), filter = "bottom")#end of renderDT
+       # },ignoreInit=TRUE)#end of observe input$genome
         
         
        },ignoreInit=TRUE)#end of observe input$submitinput   
@@ -363,4 +370,4 @@ server <- function(input, output, session) {
 
 }
 
-shinyApp(ui, server,enableBookmarking="url")
+shinyApp(ui, server)

@@ -1,16 +1,27 @@
 load_libs<-function(pg_choice,Rlib){
+  .libPaths(Rlib)
+  library(Biostrings,lib.loc=Rlib)
+  library(Rsamtools,lib.loc=Rlib)
+  library(GenomicAlignments,lib.loc=Rlib)
   if(pg_choice=="RaceID3"){
     library(Matrix,lib.loc=Rlib)
     library(RaceID,lib.loc=Rlib)
-    library(ggplot2,lib.loc=Rlib) } else if (pg_choice == "Monocle"){
+     } else if (pg_choice == "Monocle"){
       library(VGAM, lib.loc=Rlib)
       library(irlba, lib.loc=Rlib)
       library(DDRTree, lib.loc=Rlib)
-      library(monocle,lib.loc=Rlib)
+      library(monocle,lib.loc=Rlib,verbose=TRUE)
+      library(rlang,lib.loc=Rlib)
       library(scales,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
-    } 
-}
+     } 
+  library(crayon,lib.loc=Rlib)
+  library(withr,lib.loc=Rlib)
+  library(rlang,lib.loc=Rlib)
+  library(ggplot2,lib.loc=Rlib)
+  library(gplots,lib.loc=Rlib)
+  library(RColorBrewer,lib.loc=Rlib)
+  }
 
 get_cluinit<-function(pg_choice,sc){
    if(pg_choice=="RaceID3"){
@@ -61,7 +72,7 @@ get_top10<-function(pg_choice,sc){
       top10<-top10[with(top10, order(Cluster, padj)),]
    }else if (pg_choice == "Monocle"){
      #convert seurat object from monocle... 
-     seuset <- Seurat::CreateSeuratObject(counts=exprs(sc), 
+     seuset <- Seurat::CreateSeuratObject(counts=Biobase::exprs(sc), 
                                               min.cells=4,
                                               min.features=0,
                                               project = "exportCDS",
@@ -90,6 +101,7 @@ get_marker_plot<-function(pg_choice,sc,topn){
   col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
   set.seed(123)
   genes<-unique(topn$Gene)
+  #genes<-gsub("--","__",genes)
   if(pg_choice=="RaceID3"){
     #plotmarkergenes(sc,genes)
     plotdat<-as.data.frame(as.matrix(sc@ndata[rowSums(as.matrix(sc@ndata))>0,]),stringsAsFactors=FALSE)
@@ -102,7 +114,7 @@ get_marker_plot<-function(pg_choice,sc,topn){
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))
   }else if (pg_choice == "Monocle"){
-    seuset <- Seurat::CreateSeuratObject(counts=exprs(sc), 
+    seuset <- Seurat::CreateSeuratObject(counts=Biobase::exprs(sc), 
                                          min.cells=4,
                                          min.features=0,
                                          project = "exportCDS",
@@ -118,6 +130,9 @@ get_marker_plot<-function(pg_choice,sc,topn){
     seuset <- FindClusters(object = seuset)
     #seuset <- RunTSNE(object = seuset)
     seuset<-SetIdent(seuset, value = pData(sc)$Cluster)
+    sink("/var/log/shiny-server/seuset.err")
+    print(str(seuset))
+    sink()
     DoHeatmap(object = seuset,features=genes)
   }
 }
@@ -126,7 +141,7 @@ render_data_head<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
     ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
   }else if (pg_choice == "Monocle"){
-    ntemp<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+    ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }
   return(ntemp)
 }
@@ -136,7 +151,7 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
     plotexpmap(sc,nv,n=nt,logsc=tsnelog)
   }else if (pg_choice == "Monocle"){
     plotdat<-as.data.frame(t(sc@reducedDimA),stringsAsFactors=FALSE)
-    ndata<-as.data.frame(t(t(exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+    ndata<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
     if (tsnelog) {
       f <- l == 0
