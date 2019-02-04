@@ -116,7 +116,12 @@ server <- function(input, output, session) {
        
         observeEvent(input$getmkrs, {
          sc<-values$sc
-         top10<-get_top10(input$selectformat,sc) #
+         top10_seuset<-get_top10(input$selectformat,sc)
+         top10<-top10_seuset[[1]]
+         sink("/var/log/shiny-server/top10.txt")
+         print(top10)
+         sink()
+         seuset<-top10_seuset[[2]]#
     ######################################################################
          observeEvent(input$numDEGs, { 
              req(input$getmkrs)            
@@ -127,7 +132,7 @@ server <- function(input, output, session) {
              topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
              output$topn<-renderTable({topn})
              values$topn<-topn
-             output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn)})
+             output$geneheatmap<-renderPlot({try(get_marker_plot(input$selectformat,sc,topn,seuset),outFile="/var/log/shiny-server/get_marker_plot.err")})
              
            })#end of observe numDEGs
           

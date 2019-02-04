@@ -70,6 +70,7 @@ get_top10<-function(pg_choice,sc){
       top10<-as.data.frame(do.call(rbind,res10L))
       #top10<-top10[top10$padj<0.05,]
       top10<-top10[with(top10, order(Cluster, padj)),]
+      seuset<-NULL
    }else if (pg_choice == "Monocle"){
      #convert seurat object from monocle... 
      seuset <- Seurat::CreateSeuratObject(counts=Biobase::exprs(sc), 
@@ -81,8 +82,8 @@ get_top10<-function(pg_choice,sc){
      
      seuset@meta.data <- pData(sc)
      seuset <- NormalizeData(object = seuset)
-     seuset <- FindVariableFeatures(object = seuset)
-     seuset <- ScaleData(object = seuset)
+     seuset <- FindVariableFeatures(object = seuset)#,set.var.genes = FALSE
+     seuset <- ScaleData(object = seuset,features = NULL)
      seuset <- RunPCA(object = seuset)
      seuset <- FindNeighbors(object = seuset)
      seuset <- FindClusters(object = seuset)
@@ -93,10 +94,10 @@ get_top10<-function(pg_choice,sc){
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
      top10<-as.data.frame(top10,stringsAsFactors=FALSE)
    }
-  return(top10)
+  return(list(top10,seuset))
 }
 
-get_marker_plot<-function(pg_choice,sc,topn){
+get_marker_plot<-function(pg_choice,sc,topn,seuset){
   qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
   col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
   set.seed(123)
@@ -114,22 +115,7 @@ get_marker_plot<-function(pg_choice,sc,topn){
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))
   }else if (pg_choice == "Monocle"){
-    seuset <- Seurat::CreateSeuratObject(counts=Biobase::exprs(sc), 
-                                         min.cells=4,
-                                         min.features=0,
-                                         project = "exportCDS",
-                                         meta.data = pData(sc),
-                                         assay="RNA")
-    
-    seuset@meta.data <- pData(sc)
-    seuset <- NormalizeData(object = seuset)
-    seuset <- FindVariableFeatures(object = seuset)
-    seuset <- ScaleData(object = seuset)
-    seuset <- RunPCA(object = seuset)
-    seuset <- FindNeighbors(object = seuset)
-    seuset <- FindClusters(object = seuset)
-    #seuset <- RunTSNE(object = seuset)
-    seuset<-SetIdent(seuset, value = pData(sc)$Cluster)
+    seuset@var.genes<-unique(c(seuset@var.genes,genes))
     sink("/var/log/shiny-server/seuset.err")
     print(str(seuset))
     sink()
