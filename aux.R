@@ -115,11 +115,13 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))
   }else if (pg_choice == "Monocle"){
-    seuset@var.genes<-unique(c(seuset@var.genes,genes))
+    if(!is.null(VariableFeatures(seuset))){
+    VariableFeatures(seuset)<-unique(c(VariableFeatures(seuset),genes))
+    seuset <- ScaleData(object = seuset)
     sink("/var/log/shiny-server/seuset.err")
     print(str(seuset))
     sink()
-    DoHeatmap(object = seuset,features=genes)
+    DoHeatmap(object = seuset,features=genes)}
   }
 }
 
