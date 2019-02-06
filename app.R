@@ -1,19 +1,17 @@
 ## app.R ##
-#Rlib="/data/boehm/group/shiny_apps/Rlibs3.5.0"
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
-#Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.6"
+debug_path="/var/log/shiny-server"
+#debug_path="/data/manke/sikora/shiny_apps/debug"
+.libPaths(Rlib)
 
-#library(Rcpp,lib.loc=Rlib,verbose=TRUE)#,lib.loc=Rlib
-#library(scales,lib.loc=Rlib,verbose=TRUE)
-#library(shiny,lib.loc=Rlib,verbose=TRUE)
-sink("/var/log/shiny-server/sessionInfo.txt")
+sink(file.path(debug_path,"sessionInfo.txt"))
 print(sessionInfo())
 sink()
-library(shinydashboard,lib.loc=Rlib,verbose=TRUE)
-library(rhandsontable,lib.loc=Rlib,verbose=TRUE)
-library(DT,lib.loc=Rlib,verbose=TRUE)
 
-#options(shiny.error = browser)
+library(shinydashboard)#,lib.loc=Rlib,verbose=TRUE
+library(rhandsontable) #,lib.loc=Rlib,verbose=TRUE
+library(DT) #,lib.loc=Rlib,verbose=TRUE
+
 
 ui <- function(request) {dashboardPage(
     dashboardHeader(title = "Dataset selection"),
@@ -46,8 +44,8 @@ ui <- function(request) {dashboardPage(
 
 server <- function(input, output, session) {
     
-    output$walkThrough<-renderUI(HTML("<ul><li>1.Provide group and project ID information to retrieve a serialized R object containing your dataset. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.Provide semicolon-separated Gene IDs to plot aggregate expression for.</li><li>3.#This is a currently not implemented## Provide rules for cell assignment to a known class that will be used to facet the plots.Click on Run analysis.#End of not implemented# Your results will appear in the corresponding tabs.</li><li>The order of providing the information matters!</li></ul>"))
-    output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n Merging data from multiple datasets or batch effect removal are currenlty not supported.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/katsikora/scRNAseq_shiny_app .")
+    output$walkThrough<-renderUI(HTML("<ul><li>1.Provide group, data owner and project ID information to retrieve a serialized R object containing your dataset. If providing a custom path to an *RData object under \"Data path\", leave the first 3 fields empty. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cluster.Number\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for or select genes from the annotation table.</li><li>4.If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Tsne.Map\". At the same time, top correlated genes will be listed in the tab \"Top.Correl.Genes\". </li><li>5.To plot pairwise gene expression of genes of interest, enter gene IDs to use for the X and for the Y axes in the tab \"Pairwise.Expression\"</li></ul>"))
+    output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/maxplanck-ie/scRNAseq_shiny_app .")
     
     output$fileDescription<-renderText("GeneID: Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
     
@@ -58,7 +56,7 @@ server <- function(input, output, session) {
     source("/data/manke/sikora/shiny_apps/scRNAseq_shiny_app/aux.R")
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
-    observeEvent(input$selectformat,{try(load_libs(input$selectformat,Rlib),outFile="/var/log/shiny-server/library.err")},ignoreInit=TRUE)#
+    observeEvent(input$selectformat,{try(load_libs(input$selectformat,Rlib),outFile="library.err")},ignoreInit=TRUE)#
     
 
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
@@ -72,7 +70,7 @@ server <- function(input, output, session) {
 ################################
     observeEvent(input$adddataset, {
       ######################################################################################################      
-      psel<-c("Monocle"="*.mono.set.RData$","RaceID3"="^sc.minT*.RData$") 
+      psel<-c("Monocle"="*.mono.set.RData","RaceID3"="sc.minT*.RData") 
       inFormat<-isolate(input$selectformat)
       
       if((input$group!="")&(input$owner!="")&(input$projectid!="")&(input$pathtodata=="")){
@@ -80,36 +78,54 @@ server <- function(input, output, session) {
         inOwner<-isolate(input$owner)
         inProjectID<-isolate(input$projectid)
   
-        values$datdir<-system(sprintf("find /data/%s/sequencing_data -name Analysis_%s_%s_%s -type d | sort",tolower(gsub("-.+","",inGroup)),inProjectID,inOwner,inGroup),intern=TRUE) 
-        details<-file.info(dir(datdir,pattern="*.mono.set.RData$",full.names=TRUE,recursive=TRUE))
+        values$datdir<-system2(sprintf("find /data/%s/sequencing_data -name Analysis_%s_%s_%s -type d  | sort",tolower(gsub("-.+","",inGroup)),inProjectID,inOwner,inGroup),stdout=TRUE,stderr=file.path(debug_path,"find.err"))
+        sink(file.path(debug_path,"datdir.txt"))
+        print(datdir)
+        sink()
+        details<-file.info(dir(datdir,pattern=psel[inFormat],full.names=TRUE,recursive=TRUE))
         details = details[with(details, order(as.POSIXct(mtime),decreasing=TRUE)), ]
+        sink(file.path(debug_path,"details.txt"))
+        print(details)
+        sink()
         
         values$datpath<-rownames(details)[1]
               }
       
       else if ((input$group=="")&(input$owner=="")&(input$projectid=="")&(input$pathtodata!="")){
-        values$datpath<-isolate(input$pathtodata)
+        try(values$datpath<-isolate(input$pathtodata),outFile=file.path(debug_path,"datpath.err"))
       }  
       datPath<-isolate(values$datpath)
+      sink(file.path(debug_path,"datpath.txt"))
+      print(datPath)
+      print(file.info(datPath))
+      sink()
       
     
       if(grepl("rds$",datPath,ignore.case=TRUE)){
             values$sc<-readRDS(datPath)}
       else if (grepl("rdata$",datPath,ignore.case=TRUE)){
            myEnv<-environment()
-           try(sctmp<-load(datPath, envir = myEnv),outFile="/var/log/shiny-server/RData.err")
+           try(sctmp<-load(datPath, envir = myEnv),outFile=file.path(debug_path,"RData.err"))
+           sink(file.path(debug_path,"sc.txt"))
+           print(str(myEnv[[sctmp]]))
+           sink()
            values$sc <- myEnv[[sctmp]]
-             }
+           
+      }
+     
        sc<-values$sc
+       sink(file.path(debug_path,"sc_outside.txt"))
+       print(str(sc))
+       sink()
        
     ###########################################################################################################   
-       cluinit<-try(get_cluinit(input$selectformat,sc),outFile="/var/log/shiny-server/cluinit.err")
+       cluinit<-try(get_cluinit(input$selectformat,sc),outFile=file.path(debug_path,"cluinit.err"))
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
     ###########################################################################################################      
        observeEvent(input$plotclu, {
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
            sc<-values$sc
-       output$tsneClu<-try(renderPlot({get_clu_plot(input$selectformat,sc)}),outFile="/var/log/shiny-server/get_clu_plot.err")
+       output$tsneClu<-try(renderPlot({get_clu_plot(input$selectformat,sc)}),outFile=file.path(debug_path,"get_clu_plot.err"))
        },ignoreInit=TRUE)#end observe plotclu
        
     ###########################################################################################################   
@@ -118,7 +134,7 @@ server <- function(input, output, session) {
          sc<-values$sc
          top10_seuset<-get_top10(input$selectformat,sc)
          top10<-top10_seuset[[1]]
-         sink("/var/log/shiny-server/top10.txt")
+         sink(file.path(debug_path,"top10.txt"))
          print(top10)
          sink()
          seuset<-top10_seuset[[2]]#
@@ -132,7 +148,7 @@ server <- function(input, output, session) {
              topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
              output$topn<-renderTable({topn})
              values$topn<-topn
-             output$geneheatmap<-renderPlot({try(get_marker_plot(input$selectformat,sc,topn,seuset),outFile="/var/log/shiny-server/get_marker_plot.err")})
+             output$geneheatmap<-renderPlot({try(get_marker_plot(input$selectformat,sc,topn,seuset),outFile=file.path(debug_path,"get_marker_plot.err"))})
              
            })#end of observe numDEGs
           
@@ -155,16 +171,19 @@ server <- function(input, output, session) {
         
         #render the head
         sc<-values$sc
-        sink("/var/log/shiny-server/pData_head.txt")
-        ntemp<-try(render_data_head(input$selectformat,sc),outFile="/var/log/shiny-server/ntemp.err")
-        values$ndata<-ntemp[rowSums(ntemp)>0,]
+        #sink("pData_head.txt")
+        ntemp<-try(render_data_head(input$selectformat,sc),outFile=file.path(debug_path,"ntemp.err"))
+        try(values$ndata<-ntemp[rowSums(ntemp)>0,],outFile=file.path(debug_path,"rowsums.err"))
         ndata<-values$ndata
         output$datHead<-renderTable({ndata[1:10,1:min(8,ncol(ndata))]},caption="Normalized data",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
          orgv<-c("Zebrafish [zv10]"="GRCz10","Fission yeast"="SchizoSPombe_ASM294v2","Fruitfly [dm6]"="dm6","Fruitfly [dm3]"="dm3","Human [hg37]"="hs37d5","Human [hg38]"="GRCh38","Mouse [mm9]"="GRCm37","Mouse [mm10]"="GRCm38")
         #observeEvent(input$genome,{
             ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
             gtf_path<-ens_dir[length(ens_dir)]
-            gtf<-as.data.frame(rtracklayer::import(gtf_path))
+            sink(file.path(debug_path,"gtf.diagnostics.txt"))
+            print(file.info(gtf_path))
+            sink()
+            try(gtf<-as.data.frame(rtracklayer::import(gtf_path)),outFile=file.path(debug_path,"import_gtf.err"))
             gtf<-unique(gtf[,c(1,5,10:16)])
             gtf$GeneSym<-paste0(gtf$gene_name,"__chr",gtf$seqnames)
         

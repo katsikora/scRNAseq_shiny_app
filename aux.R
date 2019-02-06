@@ -1,26 +1,26 @@
 load_libs<-function(pg_choice,Rlib){
   .libPaths(Rlib)
-  library(Biostrings,lib.loc=Rlib)
-  library(Rsamtools,lib.loc=Rlib)
-  library(GenomicAlignments,lib.loc=Rlib)
+  #library(Biostrings,lib.loc=Rlib)
+  #library(Rsamtools,lib.loc=Rlib)
+  #library(GenomicAlignments,lib.loc=Rlib)
   if(pg_choice=="RaceID3"){
-    library(Matrix,lib.loc=Rlib)
-    library(RaceID,lib.loc=Rlib)
+    #library(Matrix,lib.loc=Rlib)
+    library(RaceID)#,lib.loc=Rlib
      } else if (pg_choice == "Monocle"){
-      library(VGAM, lib.loc=Rlib)
-      library(irlba, lib.loc=Rlib)
-      library(DDRTree, lib.loc=Rlib)
-      library(monocle,lib.loc=Rlib,verbose=TRUE)
-      library(rlang,lib.loc=Rlib)
-      library(scales,lib.loc=Rlib)
-      library(Seurat,lib.loc=Rlib)
+      #library(VGAM, lib.loc=Rlib)
+      #library(irlba, lib.loc=Rlib)
+      #library(DDRTree, lib.loc=Rlib)
+      library(monocle)#lib.loc=Rlib
+      #library(rlang,lib.loc=Rlib)
+      #library(scales,lib.loc=Rlib)
+      library(Seurat)#,lib.loc=Rlib
      } 
-  library(crayon,lib.loc=Rlib)
-  library(withr,lib.loc=Rlib)
-  library(rlang,lib.loc=Rlib)
-  library(ggplot2,lib.loc=Rlib)
-  library(gplots,lib.loc=Rlib)
-  library(RColorBrewer,lib.loc=Rlib)
+  #library(crayon,lib.loc=Rlib)
+  #library(withr,lib.loc=Rlib)
+  #library(rlang,lib.loc=Rlib)
+  library(ggplot2)#,lib.loc=Rlib
+  library(gplots)#,lib.loc=Rlib
+  library(RColorBrewer)#,lib.loc=Rlib
   }
 
 get_cluinit<-function(pg_choice,sc){
@@ -39,7 +39,7 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
     if(numclu!=max(sc@cluster$kpart)){   
       scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=numclu)
       scnew<-findoutliers(scnew)
-      scnew@cpart<-scnew@cluster$kpart
+      scnew@cpart<-scnew@cluster$kpart 
     }}else if (pg_choice == "Monocle"){
        scnew<-sc
         if(numclu+1!=max(as.numeric(pData(sc)$Cluster))){
@@ -118,7 +118,7 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
     if(!is.null(VariableFeatures(seuset))){
     VariableFeatures(seuset)<-unique(c(VariableFeatures(seuset),genes))
     seuset <- ScaleData(object = seuset)
-    sink("/var/log/shiny-server/seuset.err")
+    sink(file.path(debug_path,"seuset.err"))
     print(str(seuset))
     sink()
     DoHeatmap(object = seuset,features=genes)}
@@ -127,7 +127,7 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
 
 render_data_head<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
-    ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
+    try(ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE),outFile=file.path(debug_path,"render_head.err"))
   }else if (pg_choice == "Monocle"){
     ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }
