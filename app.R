@@ -298,6 +298,8 @@ server <- function(input, output, session) {
             output$pwplot<-renderPlot({ggplot(data=plotdat)+geom_point(aes(x=X,y=Y))+ggtitle(paste(pt,"cor=",corv,sep=" "))})
 
        },ignoreInit=TRUE)#end of observe input$plotpwcor 
+        
+        cludesc<-c("RaceID3"="Kmedoids clustering was run on logpearson distances between cells.","Monocle"="Density clustering was run on distances between cells.")
 
    
 
@@ -333,7 +335,7 @@ server <- function(input, output, session) {
                                                          fluidPage(
                                                            box(plotOutput("tsneClu"),width=5,height=600),
                                                            box(title = "Plot controls",uiOutput("CluCtrl")),
-                                                           box(title="Method Description",renderText("Kmedoids clustering was run on logpearson distances between cells.")),
+                                                           box(title="Method Description",renderText(cludesc[input$selectformat])),
                                                            box(actionButton(inputId="plotclu",label="Plot clusters on tsne"),
                                                            actionButton(inputId="getmkrs",label="Get marker genes"),width=6),
                                                            box(plotOutput("geneheatmap"),width=6),

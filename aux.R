@@ -1,3 +1,5 @@
+debug_path="/var/log/shiny-server"
+#debug_path="/data/manke/sikora/shiny_apps/debug"
 load_libs<-function(pg_choice,Rlib){
   .libPaths(Rlib)
   #library(Biostrings,lib.loc=Rlib)
