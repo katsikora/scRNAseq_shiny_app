@@ -1,28 +1,18 @@
 debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
+set.seed(314)
 load_libs<-function(pg_choice,Rlib){
   .libPaths(Rlib)
-  #library(Biostrings,lib.loc=Rlib)
-  #library(Rsamtools,lib.loc=Rlib)
-  #library(GenomicAlignments,lib.loc=Rlib)
   if(pg_choice=="RaceID3"){
-    #library(Matrix,lib.loc=Rlib)
-    library(RaceID)#,lib.loc=Rlib
+    library(RaceID)
      } else if (pg_choice == "Monocle"){
-      #library(VGAM, lib.loc=Rlib)
-      #library(irlba, lib.loc=Rlib)
-      #library(DDRTree, lib.loc=Rlib)
-      library(monocle)#lib.loc=Rlib
-      #library(rlang,lib.loc=Rlib)
-      #library(scales,lib.loc=Rlib)
-      library(Seurat)#,lib.loc=Rlib
+      library(monocle)
+      library(Seurat)
      } 
-  #library(crayon,lib.loc=Rlib)
-  #library(withr,lib.loc=Rlib)
-  #library(rlang,lib.loc=Rlib)
-  library(ggplot2)#,lib.loc=Rlib
-  library(gplots)#,lib.loc=Rlib
-  library(RColorBrewer)#,lib.loc=Rlib
+  
+  library(ggplot2)
+  library(gplots)
+  library(RColorBrewer)
   }
 
 get_cluinit<-function(pg_choice,sc){
@@ -70,7 +60,6 @@ get_top10<-function(pg_choice,sc){
           dg$Gene<-rownames(dg)}else{dg<-NULL}
         return(dg)})
       top10<-as.data.frame(do.call(rbind,res10L))
-      #top10<-top10[top10$padj<0.05,]
       top10<-top10[with(top10, order(Cluster, padj)),]
       seuset<-NULL
    }else if (pg_choice == "Monocle"){
@@ -102,15 +91,13 @@ get_top10<-function(pg_choice,sc){
 get_marker_plot<-function(pg_choice,sc,topn,seuset){
   qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
   col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  set.seed(123)
+  set.seed(314)
   genes<-unique(topn$Gene)
   #genes<-gsub("--","__",genes)
   if(pg_choice=="RaceID3"){
-    #plotmarkergenes(sc,genes)
     plotdat<-as.data.frame(as.matrix(sc@ndata[rowSums(as.matrix(sc@ndata))>0,]),stringsAsFactors=FALSE)
     plotdat<-subset(plotdat,subset=rownames(plotdat) %in% genes)
     plotdat2<-as.matrix(log2(plotdat+0.01))
-    #rownames(plotdat2)<-rownames(plotdat)
     plotdat2<-plotdat2[match(genes,rownames(plotdat2)),order(as.numeric(sc@cpart))]
     colv<-sample(col_vector,max(as.numeric(sc@cpart)))[sort(as.numeric(sc@cpart))]
     heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",

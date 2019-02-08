@@ -3,6 +3,8 @@ Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
 debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
 .libPaths(Rlib)
+set.seed(314)
+
 
 sink(file.path(debug_path,"sessionInfo.txt"))
 print(sessionInfo())
