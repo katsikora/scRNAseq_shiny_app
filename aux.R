@@ -1,13 +1,13 @@
-debug_path="/var/log/shiny-server"
-#debug_path="/data/manke/sikora/shiny_apps/debug"
+#debug_path="/var/log/shiny-server"
+debug_path="/data/manke/sikora/shiny_apps/debug"
 set.seed(314)
 load_libs<-function(pg_choice,Rlib){
   .libPaths(Rlib)
   if(pg_choice=="RaceID3"){
-    library(RaceID)
+    library(RaceID,lib.loc=Rlib)
      } else if (pg_choice == "Monocle"){
-      library(monocle)
-      library(Seurat)
+      library(monocle,lib.loc=Rlib)
+      library(Seurat,lib.loc=Rlib)
      } 
   
   library(ggplot2)
