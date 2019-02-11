@@ -1,7 +1,7 @@
 ## app.R ##
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
-#debug_path="/var/log/shiny-server"
-debug_path="/data/manke/sikora/shiny_apps/debug"
+debug_path="/var/log/shiny-server"
+#debug_path="/data/manke/sikora/shiny_apps/debug"
 .libPaths(Rlib)
 set.seed(314)
 
@@ -255,6 +255,10 @@ server <- function(input, output, session) {
                 
         },ignoreInit=TRUE)#end of observe input$selectgenesfromtab
         
+        #observeEvent(input$clearRowSel,{
+        #  input$gtf_rows_selected<-""
+        #},ignoreInit=TRUE)
+        
         
        observeEvent(input$plottsne,{
          
@@ -356,15 +360,16 @@ server <- function(input, output, session) {
 
                                                 ),##
                                                 
-                                                tabPanel(title="Annotation.Table",
-                                                         fluidRow(
-                                                           column(4,uiOutput("configurator"))
-                                                           ),
-                                                         #fluidPage(
-                                                         DTOutput("gtf"),
-                                                         actionButton(inputId="selGenesFromTab",label="Select Gene IDs from table")
-                                                         #)
-                                                ),
+                                                #tabPanel(title="Annotation.Table",
+                                                         #fluidRow(
+                                                           #column(4,uiOutput("configurator"))
+                                                           #),
+                                                         
+                                                         #DTOutput("gtf"),
+                                                         #actionButton(inputId="selGenesFromTab",label="Select Gene IDs from table"),
+                                                         #actionButton(inputId="clearRowSel",label="Clear row selection")
+                                                         
+                                                #),
                                                    tabPanel(title="Tsne.Map",
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
