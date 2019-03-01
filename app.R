@@ -62,6 +62,15 @@ server <- function(input, output, session) {
     
 
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
+    
+    output$downloadSessionInfo <- downloadHandler(
+      filename = "sessionInfo.txt",
+      content = function(con) {
+        sink(con)
+        print(sessionInfo())
+        sink()
+      }
+    )
 
     values<-reactiveValues()
     values$rowsSel<-""
@@ -166,7 +175,9 @@ server <- function(input, output, session) {
             paste("sc.clu",input$numclu,".top",input$numDEGs, ".tsv", sep = "")
           },
           content = function(file) {
-            write.table(values$topn, file, row.names = FALSE,sep="\t",quote=FALSE)
+            line<-paste0("#",datPath)
+            write(line, file=file, append=FALSE )
+            write.table(values$topn, file, row.names = FALSE,sep="\t",quote=FALSE,append=TRUE)
           }
         )
     #####################################################################    
@@ -314,9 +325,7 @@ server <- function(input, output, session) {
                }
          )
 
-   
-
-
+         
 ############################
     output$resultPanels<-renderUI({myTabs<-list(tabPanel(title="WalkThrough",
                                                       fluidPage(
@@ -400,7 +409,8 @@ server <- function(input, output, session) {
                                                           ),
                                                   tabPanel(title="sessionInfo",
                                                       fluidPage(
-                                                          verbatimTextOutput("sessionInfo")                                                          
+                                                          verbatimTextOutput("sessionInfo"),
+                                                          downloadButton(outputId="downloadSessionInfo", label="Download session info")
                                                                )
                                                           )
 
