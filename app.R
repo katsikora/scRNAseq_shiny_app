@@ -1,7 +1,7 @@
 ## app.R ##
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
-debug_path="/var/log/shiny-server"
-#debug_path="/data/manke/sikora/shiny_apps/debug"
+#debug_path="/var/log/shiny-server"
+debug_path="/data/manke/sikora/shiny_apps/debug"
 .libPaths(Rlib)
 set.seed(314)
 
@@ -146,7 +146,7 @@ server <- function(input, output, session) {
     ###########################################################################################################   
        
         observeEvent(input$getmkrs, {
-         showNotification("The markers are being calculated. Pleasea allow some minutes.",type="warning",duration=15)#to get a yellow background  
+         showNotification("The markers are being calculated. Please allow some minutes.",type="warning",duration=15)#to get a yellow background  
          sc<-values$sc
          top10_seuset<-get_top10(input$selectformat,sc)
          top10<-top10_seuset[[1]]
@@ -194,6 +194,8 @@ server <- function(input, output, session) {
         try(values$ndata<-ntemp[rowSums(ntemp)>0,],outFile=file.path(debug_path,"rowsums.err"))
         ndata<-values$ndata
         output$datHead<-renderTable({ndata[1:10,1:min(8,ncol(ndata))]},caption="Normalized data",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
+        output$dataDims<-renderText({sprintf("Your input has %s rows and %s columns.",nrow(ndata),ncol(ndata))})
+        output$summaryTPC<-renderPrint({summary(colSums(as.matrix(ndata)))})
          orgv<-c("Zebrafish [zv10]"="GRCz10","Fission yeast"="SchizoSPombe_ASM294v2","Fruitfly [dm6]"="dm6","Fruitfly [dm3]"="dm3","Human [hg37]"="hs37d5","Human [hg38]"="GRCh38","Mouse [mm9]"="GRCm37","Mouse [mm10]"="GRCm38")
         #observeEvent(input$genome,{
             ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
@@ -350,20 +352,11 @@ server <- function(input, output, session) {
                                                       fluidPage(
                                                           fluidRow(
                                                             tableOutput("datHead"),
-                                                              tableOutput("countDatHead")
-                                                                   ),
-                                                          #fluidRow(
-                                                              rHandsontableOutput("hot"),
+                                                            box(textOutput("dataDims"),width=4,title="Dimensions of your data."),
+                                                            box(verbatimTextOutput("summaryTPC"),width=4,title="Summary of transcript per cell (TPC) in your data.")
+                                                                   )
+                                                             ) 
                                                               
-                                                            #      ),
-                                                          fluidRow(
-                                                              tableOutput("inTabHead"),
-                                                              textOutput("dataDims"),
-                                                              box(title="Debug",
-                                                                  textOutput("debug"),
-                                                                  textOutput("ingenes"))
-                                                                  ) 
-                                                              )
                                                           ),
                                                 ##
                                                 tabPanel(title="Cluster.Number",
