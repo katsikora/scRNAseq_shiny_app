@@ -5,6 +5,7 @@ debug_path="/var/log/shiny-server"
 .libPaths(Rlib)
 set.seed(314)
 
+options(shiny.maxRequestSize = 100*1024^2)
 
 sink(file.path(debug_path,"sessionInfo.txt"))
 print(sessionInfo())
@@ -26,6 +27,7 @@ ui <- function(request) {dashboardPage(
       textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="projectid", label="Project ID", value = "", width = NULL, placeholder = NULL),
       textInput(inputId="pathtodata", label="Data path", value = "", width = NULL, placeholder = NULL),
+      fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       actionButton(inputId="adddataset", label="Select dataset"),
       textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
       actionButton("selectgenes", "Select genes"),
@@ -105,6 +107,7 @@ server <- function(input, output, session) {
       else if ((input$group=="")&(input$owner=="")&(input$projectid=="")&(input$pathtodata!="")){
         try(values$datpath<-isolate(input$pathtodata),outFile=file.path(debug_path,"datpath.err"))
       }  
+      else if (!is.null(input$file1)){try(values$datpath<-isolate(input$file1)$datapath,outFile=file.path(debug_path,"datpath.err"))}
       datPath<-isolate(values$datpath)
       sink(file.path(debug_path,"datpath.txt"))
       print(datPath)
@@ -324,6 +327,13 @@ server <- function(input, output, session) {
              file.copy(from="/data/manke/sikora/shiny_apps/scRNAseq_docs/scRNAseq_vignette.html", to=con, overwrite =TRUE)
                }
          )
+         
+         output$downloadData <- downloadHandler(
+           filename = "MyData.RDS",
+           content = function(con) {
+             base::saveRDS(isolate(values$sc),file=con)
+           }
+         )
 
          
 ############################
@@ -345,8 +355,8 @@ server <- function(input, output, session) {
                                                               
                                                             #      ),
                                                           fluidRow(
-                                                              box(renderText("Please complete missing sample information. Group variable will be used for plot faceting.")),
                                                               tableOutput("inTabHead"),
+                                                              textOutput("dataDims"),
                                                               box(title="Debug",
                                                                   textOutput("debug"),
                                                                   textOutput("ingenes"))
@@ -410,7 +420,8 @@ server <- function(input, output, session) {
                                                   tabPanel(title="sessionInfo",
                                                       fluidPage(
                                                           verbatimTextOutput("sessionInfo"),
-                                                          downloadButton(outputId="downloadSessionInfo", label="Download session info")
+                                                          downloadButton(outputId="downloadSessionInfo", label="Download session info"),
+                                                          downloadButton(outputId="downloadData", label="Download your data")
                                                                )
                                                           )
 
