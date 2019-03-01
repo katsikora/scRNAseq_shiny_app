@@ -114,7 +114,8 @@ server <- function(input, output, session) {
       print(file.info(datPath))
       sink()
       
-    
+      showNotification("Your data is being loaded. Please allow some minutes",type="warning",duration=20)#to get a yellow background
+      
       if(grepl("rds$",datPath,ignore.case=TRUE)){
             values$sc<-readRDS(datPath)}
       else if (grepl("rdata$",datPath,ignore.case=TRUE)){
@@ -145,6 +146,7 @@ server <- function(input, output, session) {
     ###########################################################################################################   
        
         observeEvent(input$getmkrs, {
+         showNotification("The markers are being calculated. Pleasea allow some minutes.",type="warning",duration=15)#to get a yellow background  
          sc<-values$sc
          top10_seuset<-get_top10(input$selectformat,sc)
          top10<-top10_seuset[[1]]
