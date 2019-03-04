@@ -1,7 +1,7 @@
 ## app.R ##
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
-#debug_path="/var/log/shiny-server"
-debug_path="/data/manke/sikora/shiny_apps/debug"
+debug_path="/var/log/shiny-server"
+#debug_path="/data/manke/sikora/shiny_apps/debug"
 .libPaths(Rlib)
 set.seed(314)
 
@@ -136,11 +136,13 @@ server <- function(input, output, session) {
     ###########################################################################################################   
        cluinit<-try(get_cluinit(input$selectformat,sc),outFile=file.path(debug_path,"cluinit.err"))
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
+       output$cluSep<-try(renderPlot({plot_clu_separation(input$selectformat,sc)}),outFile=file.path(debug_path,"clu_separation.err"))
     ###########################################################################################################      
        observeEvent(input$plotclu, {
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
            sc<-values$sc
        output$tsneClu<-try(renderPlot({get_clu_plot(input$selectformat,sc)}),outFile=file.path(debug_path,"get_clu_plot.err"))
+       output$silhPlot<-try(renderPlot({plot_silhouette(input$selectformat,sc)}),outFile=file.path(debug_path,"plot_silhouette.err"))
        },ignoreInit=TRUE)#end observe plotclu
        
     ###########################################################################################################   
@@ -363,6 +365,8 @@ server <- function(input, output, session) {
                                                          fluidPage(
                                                            box(plotOutput("tsneClu"),width=5,height=600),
                                                            box(title = "Plot controls",uiOutput("CluCtrl")),
+                                                           box(plotOutput("silhPlot")),
+                                                           box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5),
                                                            box(title="Method Description",renderText(cludesc[input$selectformat])),
                                                            box(actionButton(inputId="plotclu",label="Plot clusters on tsne"),
                                                            actionButton(inputId="getmkrs",label="Get marker genes"),width=6),

@@ -1,5 +1,5 @@
-#debug_path="/var/log/shiny-server"
-debug_path="/data/manke/sikora/shiny_apps/debug"
+debug_path="/var/log/shiny-server"
+#debug_path="/data/manke/sikora/shiny_apps/debug"
 set.seed(314)
 load_libs<-function(pg_choice,Rlib){
   .libPaths(Rlib)
@@ -8,11 +8,12 @@ load_libs<-function(pg_choice,Rlib){
      } else if (pg_choice == "Monocle"){
       library(monocle,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
-     } 
+           } 
   
   library(ggplot2)
   library(gplots)
   library(RColorBrewer)
+  library(cluster,lib.loc=Rlib)
   }
 
 get_cluinit<-function(pg_choice,sc){
@@ -45,6 +46,29 @@ get_clu_plot<-function(pg_choice,sc){
     plotmap(sc,final=FALSE)
   }else if (pg_choice == "Monocle"){
     plot_cell_clusters(sc,1, 2, color="Cluster")
+  }
+}
+
+plot_silhouette<-function(pg_choice,sc){
+  if(pg_choice=="RaceID3"){
+    m <- sc@cluster$kpart
+    dp  <- as.dist(sc@distances)
+      }else if (pg_choice=="Monocle"){
+    z<-reduceDimension(sc, max_components = 2,reduction_method = 'ICA', verbose = T)
+    adjusted_S<-t(z@reducedDimS)
+    dp<-as.matrix(dist(adjusted_S))
+    m<-as.integer(pData(sc)$Cluster)
+    names(m)<-colnames(dp)
+    }
+  si<-silhouette(m,dp)
+  plot(si,col=1:max(m), border=NA,main=sprintf("Silhouette plot for %s clusters",max(m)))
+}
+
+plot_clu_separation<-function(pg_choice,sc){
+  if(pg_choice=="RaceID3"){
+    plotsaturation(sc,disp=TRUE)
+  }else if (pg_choice=="Monocle"){
+    plot_rho_delta(sc)
   }
 }
 
