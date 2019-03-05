@@ -1,4 +1,5 @@
 ## app.R ##
+ver_sion<-"1.0.0"
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
 debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
@@ -33,6 +34,7 @@ ui <- function(request) {dashboardPage(
       actionButton("selectgenes", "Select genes"),
       textOutput("fileDescription"),
       imageOutput("logo"),
+      textOutput("version"),
       tags$footer("Copyright 2018 MPI-IE Freiburg Bioinfo Core Unit"),
       bookmarkButton()
         ),
@@ -54,6 +56,8 @@ server <- function(input, output, session) {
     output$fileDescription<-renderText("GeneID: Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
     
     output$logo<-renderImage({list(src="/data/manke/sikora/shiny_apps/userIN_to_yaml/MPIIE_logo_sRGB.jpg",width=100,height=100)},deleteFile =FALSE)
+    
+    output$version<-renderText(sprintf("App version %s",ver_sion))
 
 
 ################################
