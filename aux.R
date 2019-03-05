@@ -54,9 +54,8 @@ plot_silhouette<-function(pg_choice,sc){
     m <- sc@cluster$kpart
     dp  <- as.dist(sc@distances)
       }else if (pg_choice=="Monocle"){
-    z<-reduceDimension(sc, max_components = 2,reduction_method = 'ICA', verbose = T)
-    adjusted_S<-t(z@reducedDimS)
-    dp<-as.matrix(dist(adjusted_S))
+    tsne_data<-reducedDimA(sc)
+    dp<-as.matrix(dist(t(tsne_data)))
     m<-as.integer(pData(sc)$Cluster)
     names(m)<-colnames(dp)
     }
