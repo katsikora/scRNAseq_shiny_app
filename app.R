@@ -1,16 +1,14 @@
 ## app.R ##
 ver_sion<-"1.0.0"
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
-debug_path="/var/log/shiny-server"
+#debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
+#debug_path="/root/container-logs"
 .libPaths(Rlib)
 set.seed(314)
 
-options(shiny.maxRequestSize = 100*1024^2)
+options(shiny.maxRequestSize = 200*1024^2)
 
-sink(file.path(debug_path,"sessionInfo.txt"))
-print(sessionInfo())
-sink()
 
 library(shinydashboard)#,lib.loc=Rlib,verbose=TRUE
 library(rhandsontable) #,lib.loc=Rlib,verbose=TRUE
@@ -64,7 +62,7 @@ server <- function(input, output, session) {
     source("/data/manke/sikora/shiny_apps/scRNAseq_shiny_app/aux.R")
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
-    observeEvent(input$selectformat,{try(load_libs(input$selectformat,Rlib),outFile="library.err")},ignoreInit=TRUE)#
+    observeEvent(input$selectformat,{load_libs(input$selectformat,Rlib)},ignoreInit=TRUE)#
     
 
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
@@ -96,27 +94,18 @@ server <- function(input, output, session) {
         inProjectID<-isolate(input$projectid)
   
         values$datdir<-system2(sprintf("find /data/%s/sequencing_data -name Analysis_%s_%s_%s -type d  | sort",tolower(gsub("-.+","",inGroup)),inProjectID,inOwner,inGroup),stdout=TRUE,stderr=file.path(debug_path,"find.err"))
-        sink(file.path(debug_path,"datdir.txt"))
-        print(datdir)
-        sink()
+        
         details<-file.info(dir(datdir,pattern=psel[inFormat],full.names=TRUE,recursive=TRUE))
         details = details[with(details, order(as.POSIXct(mtime),decreasing=TRUE)), ]
-        sink(file.path(debug_path,"details.txt"))
-        print(details)
-        sink()
         
         values$datpath<-rownames(details)[1]
               }
       
       else if ((input$group=="")&(input$owner=="")&(input$projectid=="")&(input$pathtodata!="")){
-        try(values$datpath<-isolate(input$pathtodata),outFile=file.path(debug_path,"datpath.err"))
+        values$datpath<-isolate(input$pathtodata)
       }  
-      else if (!is.null(input$file1)){try(values$datpath<-isolate(input$file1)$datapath,outFile=file.path(debug_path,"datpath.err"))}
+      else if (!is.null(input$file1)){values$datpath<-isolate(input$file1)$datapath}
       datPath<-isolate(values$datpath)
-      sink(file.path(debug_path,"datpath.txt"))
-      print(datPath)
-      print(file.info(datPath))
-      sink()
       
       showNotification("Your data is being loaded. Please allow some minutes",type="warning",duration=20)#to get a yellow background
       
@@ -124,29 +113,25 @@ server <- function(input, output, session) {
             values$sc<-readRDS(datPath)}
       else if (grepl("rdata$",datPath,ignore.case=TRUE)){
            myEnv<-environment()
-           try(sctmp<-load(datPath, envir = myEnv),outFile=file.path(debug_path,"RData.err"))
-           sink(file.path(debug_path,"sc.txt"))
-           print(str(myEnv[[sctmp]]))
-           sink()
+           sctmp<-load(datPath, envir = myEnv)
+           
            values$sc <- myEnv[[sctmp]]
            
       }
      
        sc<-values$sc
-       sink(file.path(debug_path,"sc_outside.txt"))
-       print(str(sc))
-       sink()
+       
        
     ###########################################################################################################   
-       cluinit<-try(get_cluinit(input$selectformat,sc),outFile=file.path(debug_path,"cluinit.err"))
+       cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
-       output$cluSep<-try(renderPlot({plot_clu_separation(input$selectformat,sc)}),outFile=file.path(debug_path,"clu_separation.err"))
+       output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
     ###########################################################################################################      
        observeEvent(input$plotclu, {
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
            sc<-values$sc
-       output$tsneClu<-try(renderPlot({get_clu_plot(input$selectformat,sc)}),outFile=file.path(debug_path,"get_clu_plot.err"))
-       output$silhPlot<-try(renderPlot({plot_silhouette(input$selectformat,sc)}),outFile=file.path(debug_path,"plot_silhouette.err"))
+       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
+       output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
        },ignoreInit=TRUE)#end observe plotclu
        
     ###########################################################################################################   
@@ -156,9 +141,7 @@ server <- function(input, output, session) {
          sc<-values$sc
          top10_seuset<-get_top10(input$selectformat,sc)
          top10<-top10_seuset[[1]]
-         sink(file.path(debug_path,"top10.txt"))
-         print(top10)
-         sink()
+         
          seuset<-top10_seuset[[2]]#
     ######################################################################
          observeEvent(input$numDEGs, { 
@@ -170,7 +153,7 @@ server <- function(input, output, session) {
              topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
              output$topn<-renderTable({topn})
              values$topn<-topn
-             output$geneheatmap<-renderPlot({try(get_marker_plot(input$selectformat,sc,topn,seuset),outFile=file.path(debug_path,"get_marker_plot.err"))})
+             output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn,seuset)})
              
            })#end of observe numDEGs
           
@@ -195,9 +178,8 @@ server <- function(input, output, session) {
         
         #render the head
         sc<-values$sc
-        #sink("pData_head.txt")
-        ntemp<-try(render_data_head(input$selectformat,sc),outFile=file.path(debug_path,"ntemp.err"))
-        try(values$ndata<-ntemp[rowSums(ntemp)>0,],outFile=file.path(debug_path,"rowsums.err"))
+        ntemp<-render_data_head(input$selectformat,sc)
+        values$ndata<-ntemp[rowSums(ntemp)>0,]
         ndata<-values$ndata
         output$datHead<-renderTable({ndata[1:10,1:min(8,ncol(ndata))]},caption="Normalized data",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
         output$dataDims<-renderText({sprintf("Your input has %s rows and %s columns.",nrow(ndata),ncol(ndata))})
@@ -206,10 +188,8 @@ server <- function(input, output, session) {
         #observeEvent(input$genome,{
             ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
             gtf_path<-ens_dir[length(ens_dir)]
-            sink(file.path(debug_path,"gtf.diagnostics.txt"))
-            print(file.info(gtf_path))
-            sink()
-            try(gtf<-as.data.frame(rtracklayer::import(gtf_path)),outFile=file.path(debug_path,"import_gtf.err"))
+            
+            gtf<-as.data.frame(rtracklayer::import(gtf_path))
             gtf<-unique(gtf[,c(1,5,10:16)])
             gtf$GeneSym<-paste0(gtf$gene_name,"__chr",gtf$seqnames)
         

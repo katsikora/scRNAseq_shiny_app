@@ -1,4 +1,4 @@
-debug_path="/var/log/shiny-server"
+#debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
 set.seed(314)
 load_libs<-function(pg_choice,Rlib){
@@ -130,16 +130,13 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
     if(!is.null(VariableFeatures(seuset))){
     VariableFeatures(seuset)<-unique(c(VariableFeatures(seuset),genes))
     seuset <- ScaleData(object = seuset)
-    sink(file.path(debug_path,"seuset.err"))
-    print(str(seuset))
-    sink()
     DoHeatmap(object = seuset,features=genes)}
   }
 }
 
 render_data_head<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
-    try(ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE),outFile=file.path(debug_path,"render_head.err"))
+    ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
   }else if (pg_choice == "Monocle"){
     ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }
