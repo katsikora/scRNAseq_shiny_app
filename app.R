@@ -9,7 +9,6 @@ set.seed(314)
 
 options(shiny.maxRequestSize = 200*1024^2)
 
-
 library(shinydashboard)#,lib.loc=Rlib,verbose=TRUE
 library(rhandsontable) #,lib.loc=Rlib,verbose=TRUE
 library(DT) #,lib.loc=Rlib,verbose=TRUE
@@ -22,12 +21,8 @@ ui <- function(request) {dashboardPage(
 
       selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
       selectInput(inputId="selectformat",label="Select input file format",choices=c("Please select format","RaceID3","Monocle")),
-      textInput(inputId="group", label="Group", value = "", width = NULL, placeholder = NULL),
-      textInput(inputId="owner", label="Project Owner", value = "", width = NULL, placeholder = NULL),
-      textInput(inputId="projectid", label="Project ID", value = "", width = NULL, placeholder = NULL),
-      textInput(inputId="pathtodata", label="Data path", value = "", width = NULL, placeholder = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
-      actionButton(inputId="adddataset", label="Select dataset"),
+      actionButton(inputId="adddataset", label="Submit dataset"),
       textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
       actionButton("selectgenes", "Select genes"),
       textOutput("fileDescription"),
@@ -47,8 +42,9 @@ ui <- function(request) {dashboardPage(
 
 
 server <- function(input, output, session) {
+  
     
-    output$walkThrough<-renderUI(HTML("<ul><li>1.Provide group, data owner and project ID information to retrieve a serialized R object containing your dataset. If providing a custom path to an *RData object under \"Data path\", leave the first 3 fields empty. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cluster.Number\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for or select genes from the annotation table.</li><li>4.If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Tsne.Map\". At the same time, top correlated genes will be listed in the tab \"Top.Correl.Genes\". </li><li>5.To plot pairwise gene expression of genes of interest, enter gene IDs to use for the X and for the Y axes in the tab \"Pairwise.Expression\"</li></ul>"))
+    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose organism and R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cluster.Number\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for or select genes from the annotation table.</li><li>4.If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Tsne.Map\". At the same time, top correlated genes will be listed in the tab \"Top.Correl.Genes\". </li><li>5.To plot pairwise gene expression of genes of interest, enter gene IDs to use for the X and for the Y axes in the tab \"Pairwise.Expression\"</li></ul>"))
     output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/maxplanck-ie/scRNAseq_shiny_app .")
     
     output$fileDescription<-renderText("GeneID: Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
@@ -88,23 +84,7 @@ server <- function(input, output, session) {
       psel<-c("Monocle"="*.mono.set.RData","RaceID3"="sc.minT*.RData") 
       inFormat<-isolate(input$selectformat)
       
-      if((input$group!="")&(input$owner!="")&(input$projectid!="")&(input$pathtodata=="")){
-        inGroup<-isolate(input$group)
-        inOwner<-isolate(input$owner)
-        inProjectID<-isolate(input$projectid)
-  
-        values$datdir<-system2(sprintf("find /data/%s/sequencing_data -name Analysis_%s_%s_%s -type d  | sort",tolower(gsub("-.+","",inGroup)),inProjectID,inOwner,inGroup),stdout=TRUE,stderr=file.path(debug_path,"find.err"))
-        
-        details<-file.info(dir(datdir,pattern=psel[inFormat],full.names=TRUE,recursive=TRUE))
-        details = details[with(details, order(as.POSIXct(mtime),decreasing=TRUE)), ]
-        
-        values$datpath<-rownames(details)[1]
-              }
-      
-      else if ((input$group=="")&(input$owner=="")&(input$projectid=="")&(input$pathtodata!="")){
-        values$datpath<-isolate(input$pathtodata)
-      }  
-      else if (!is.null(input$file1)){values$datpath<-isolate(input$file1)$datapath}
+       if (!is.null(input$file1)){values$datpath<-isolate(input$file1)$datapath}
       datPath<-isolate(values$datpath)
       
       showNotification("Your data is being loaded. Please allow some minutes",type="warning",duration=20)#to get a yellow background
@@ -182,8 +162,14 @@ server <- function(input, output, session) {
         values$ndata<-ntemp[rowSums(ntemp)>0,]
         ndata<-values$ndata
         output$datHead<-renderTable({ndata[1:10,1:min(8,ncol(ndata))]},caption="Normalized data",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
-        output$dataDims<-renderText({sprintf("Your input has %s rows and %s columns.",nrow(ndata),ncol(ndata))})
-        output$summaryTPC<-renderPrint({summary(colSums(as.matrix(ndata)))})
+        output$dataDims<-renderText({sprintf("Your input has %s nonzero rows and %s columns.",nrow(ndata),ncol(ndata))})
+        values$summaryTPC<-summary(colSums(as.matrix(ndata)))
+        output$summaryTPC<-renderPrint({values$summaryTPC})
+        
+        
+    #############################################################################    
+        
+        
          orgv<-c("Zebrafish [zv10]"="GRCz10","Fission yeast"="SchizoSPombe_ASM294v2","Fruitfly [dm6]"="dm6","Fruitfly [dm3]"="dm3","Human [hg37]"="hs37d5","Human [hg38]"="GRCh38","Mouse [mm9]"="GRCm37","Mouse [mm10]"="GRCm38")
         #observeEvent(input$genome,{
             ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
@@ -324,8 +310,16 @@ server <- function(input, output, session) {
              base::saveRDS(isolate(values$sc),file=con)
            }
          )
-
          
+         output$summary_produced<-reactive({isTruthy(values$summaryTPC)})
+         #output$data_loaded<-reactive({isTruthy(input$adddataset)})
+         output$waitmssg<-renderText({"Please wait until data loading is completed. This may take some minutes."})
+         output$initmssg<-renderText({"No data has been loaded. Please upload a file and click the 'Submit dataset' button."})
+
+         outputOptions(output, "summary_produced", suspendWhenHidden = FALSE)
+         #outputOptions(output, "data_loaded", suspendWhenHidden = FALSE)
+         
+         # 
 ############################
     output$resultPanels<-renderUI({myTabs<-list(tabPanel(title="WalkThrough",
                                                       fluidPage(
@@ -335,6 +329,7 @@ server <- function(input, output, session) {
                                                                )
                                                           ),
                                                   tabPanel(title="InputData",
+                                                           conditionalPanel(condition=("output.summary_produced"),
                                                       fluidPage(
                                                           fluidRow(
                                                             tableOutput("datHead"),
@@ -342,6 +337,22 @@ server <- function(input, output, session) {
                                                             box(verbatimTextOutput("summaryTPC"),width=4,title="Summary of transcript per cell (TPC) in your data.")
                                                                    )
                                                              ) 
+                                                            ),
+                                                      conditionalPanel(condition="(input.adddataset>0 || $('html').hasClass('shiny-busy') || $('summaryTPC').hasClass('recalculating'))&&(!output.summary_produced)",
+                                                                       fluidPage(
+                                                                         fluidRow(
+                                                                           box(textOutput("waitmssg")),
+                                                                           renderImage({list(src="/data/manke/sikora/shiny_apps/Agmh.gif",width=200,height=200)},deleteFile =FALSE)
+                                                                        )
+                                                                      )
+                                                                       ),
+                                                      conditionalPanel(condition="(input.adddataset==0)",
+                                                                       fluidPage(
+                                                                         fluidRow(
+                                                                           box(textOutput("initmssg"))
+                                                                         )
+                                                                       )
+                                                      )
                                                               
                                                           ),
                                                 ##
