@@ -19,8 +19,8 @@ ui <- function(request) {dashboardPage(
     ## Sidebar content
     dashboardSidebar(
 
-      selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]")),#"PLEASE SELECT A GENOME",, selected = NULL
-      selectInput(inputId="selectformat",label="Select input file format",choices=c("Please select format","RaceID3","Monocle")),
+      #selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]"), selected = NULL),#"PLEASE SELECT A GENOME",, selected = NULL
+      selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle"), selected = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       actionButton(inputId="adddataset", label="Submit dataset"),
       textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
@@ -44,7 +44,7 @@ ui <- function(request) {dashboardPage(
 server <- function(input, output, session) {
   
     
-    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose organism and R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cluster.Number\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for or select genes from the annotation table.</li><li>4.If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Tsne.Map\". At the same time, top correlated genes will be listed in the tab \"Top.Correl.Genes\". </li><li>5.To plot pairwise gene expression of genes of interest, enter gene IDs to use for the X and for the Y axes in the tab \"Pairwise.Expression\"</li></ul>"))
+    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose  R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cluster.Number\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for or select genes from the annotation table.</li><li>4.If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Tsne.Map\". At the same time, top correlated genes will be listed in the tab \"Top.Correl.Genes\". </li><li>5.To plot pairwise gene expression of genes of interest, enter gene IDs to use for the X and for the Y axes in the tab \"Pairwise.Expression\"</li></ul>"))
     output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/maxplanck-ie/scRNAseq_shiny_app .")
     
     output$fileDescription<-renderText("GeneID: Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
@@ -55,12 +55,29 @@ server <- function(input, output, session) {
 
 
 ################################
+    #check if genome has been selected and alert if not the case
+
     source("/data/manke/sikora/shiny_apps/scRNAseq_shiny_app/aux.R")
+    
+    values<-reactiveValues()
+    values$rowsSel<-""
+    values$cList<-"All"
+    values$inGenes=""
+    
+    values$init_checks_passed<-reactive({all(c(input$selectformat!="Please select a package",!is.null(input$selectformat)))})
+    output$init_checks_passed<-reactive({values$init_checks_passed()})
+    outputOptions(output, "init_checks_passed", suspendWhenHidden = FALSE)
+    
+    #waiting_for_click<-reactiveVal()
+    #waiting_for_click(1)
+    #output$waiting_for_click<-reactive({waiting_for_click()})
+    #outputOptions(output, "waiting_for_click", suspendWhenHidden = FALSE)
+    
+    
+    observeEvent(input$selectformat,{
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
-    observeEvent(input$selectformat,{load_libs(input$selectformat,Rlib)},ignoreInit=TRUE)#
-    
-
+    load_libs(input$selectformat,Rlib)},ignoreInit=TRUE)#
     output$sessionInfo <- renderPrint({capture.output(sessionInfo())})
     
     output$downloadSessionInfo <- downloadHandler(
@@ -72,22 +89,22 @@ server <- function(input, output, session) {
       }
     )
 
-    values<-reactiveValues()
-    values$rowsSel<-""
-    values$cList<-"All"
-    values$inGenes=""
+    
     
 
 ################################
-    observeEvent(input$adddataset, {
-      ######################################################################################################      
+    
+    
+    observeEvent(input$adddataset,{
+      ######################################################################################################
+      if(values$init_checks_passed()){
+        #waiting_for_click(0)
+        
       psel<-c("Monocle"="*.mono.set.RData","RaceID3"="sc.minT*.RData") 
       inFormat<-isolate(input$selectformat)
       
        if (!is.null(input$file1)){values$datpath<-isolate(input$file1)$datapath}
       datPath<-isolate(values$datpath)
-      
-      showNotification("Your data is being loaded. Please allow some minutes",type="warning",duration=20)#to get a yellow background
       
       if(grepl("rds$",datPath,ignore.case=TRUE)){
             values$sc<-readRDS(datPath)}
@@ -100,6 +117,19 @@ server <- function(input, output, session) {
       }
      
        sc<-values$sc
+       
+       class_ok<-check_class(inFormat,sc)
+       if(!isTruthy(class_ok)){showModal(modalDialog(title = "DATASET CLASS INCORRECT",
+         "Please provide a dataset of the class matching your R package selection!",
+         easyClose = TRUE
+       ))}
+       req(isTruthy(class_ok))
+       slots_ok<-check_slots(inFormat,sc)
+       if(!isTruthy(slots_ok)){showModal(modalDialog(title = "DATASET DOESN'T HAVE ALL REQUIRED SLOTS POPULATED",
+                                                     "Please provide a fully processed dataset containing clustering information and tsne coordinates!",
+                                                     easyClose = TRUE
+       ))}
+       req(isTruthy(slots_ok))
        
        
     ###########################################################################################################   
@@ -167,46 +197,19 @@ server <- function(input, output, session) {
         output$summaryTPC<-renderPrint({values$summaryTPC})
         
         
-    #############################################################################    
+        }else{ #end of if init_checks_passed
+        #waiting_for_click(1)
         
+        showModal(modalDialog(
+          title = "NO R PACKAGE SELECTED",
+          "Please provide the missing selection and re-submit dataset before continuing!",
+          easyClose = TRUE
+        ))}
         
-         orgv<-c("Zebrafish [zv10]"="GRCz10","Fission yeast"="SchizoSPombe_ASM294v2","Fruitfly [dm6]"="dm6","Fruitfly [dm3]"="dm3","Human [hg37]"="hs37d5","Human [hg38]"="GRCh38","Mouse [mm9]"="GRCm37","Mouse [mm10]"="GRCm38")
-        #observeEvent(input$genome,{
-            ens_dir<-dir(path=sprintf("/data/repository/organisms/%s_ensembl/ensembl",orgv[input$genome]),pattern="genes.gtf",full.names=TRUE,recursive=TRUE)
-            gtf_path<-ens_dir[length(ens_dir)]
-            
-            gtf<-as.data.frame(rtracklayer::import(gtf_path))
-            gtf<-unique(gtf[,c(1,5,10:16)])
-            gtf$GeneSym<-paste0(gtf$gene_name,"__chr",gtf$seqnames)
-        
-            values$dat <- gtf
-        
-     
-            output$configurator<-renderUI({tagList(selectInput(inputId="gene_biotype",label="Gene Biotype:",choices=c("All",unique(as.character(gtf$gene_biotype))),selected="All"),
-                                                 selectInput(inputId="seqnames",label="Chromosome:",choices=c("All",unique(as.character(gtf$seqnames))),selected="All")) })  
-        output$gtf<-renderDT({
-            
-          dat<-values$dat
-
-        if (!input$gene_biotype %in% "All" & !is.na(input$gene_biotype)) {
-          dat <- dat[dat$gene_biotype %in% input$gene_biotype,]
-        }
-        if (!input$seqnames %in% "All"& !is.na(input$seqnames)) {
-          dat <- dat[dat$seqnames %in% input$seqnames,]
-        }
-         
-          values$dat2<-dat
-          dat},server=TRUE,options = list(autoWidth = TRUE,scrollX=TRUE), filter = "bottom")#end of renderDT
-       # },ignoreInit=TRUE)#end of observe input$genome
-        
-        
-       },ignoreInit=TRUE)#end of observe input$submitinput   
-    
-    
-        misc<-observe({req(input$gtf_rows_selected)
-                      values$rowsSel<-input$gtf_rows_selected})
-
-      observeEvent(input$selectgenes,{
+       },ignoreInit=TRUE)#end of observe input$submitinput  
+      
+      
+          observeEvent(input$selectgenes,{
           inGenesL<-isolate(input$geneid)
           if(inGenesL!=""){
              inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
@@ -221,35 +224,10 @@ server <- function(input, output, session) {
           output$genesExpr2<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
           
           
-        },ignoreInit=TRUE)
+        },ignoreInit=TRUE) #end observe selectgenes
         
         
-        observeEvent(input$selGenesFromTab,{
-              dat2<-values$dat2
-          
-                  if(!values$rowsSel %in% ""){
-                    dat2<-dat2[values$rowsSel,]}
-                ##test which column to use
-                   z<-apply(dat2[,c("gene_id","gene_name","GeneSym")],2,function(X) sum(rownames(values$ndata) %in% X ))
-                   csel<-names(which.max(z))
-              
-                inGenes<-unique(dat2[,csel])
-                values$inGenes<-inGenes
-                output$genesSel<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
-                output$genesSel2<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
-                ndata<-isolate(values$ndata)
-                
-                nv<-inGenes[inGenes %in% rownames(ndata)]
-                output$genesExpr<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
-                output$genesExpr2<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
-                
-        },ignoreInit=TRUE)#end of observe input$selectgenesfromtab
-        
-        #observeEvent(input$clearRowSel,{
-        #  input$gtf_rows_selected<-""
-        #},ignoreInit=TRUE)
-        
-        
+       
        observeEvent(input$plottsne,{
          
             inGenes<-isolate(values$inGenes)
@@ -310,14 +288,13 @@ server <- function(input, output, session) {
              base::saveRDS(isolate(values$sc),file=con)
            }
          )
+    
          
          output$summary_produced<-reactive({isTruthy(values$summaryTPC)})
-         #output$data_loaded<-reactive({isTruthy(input$adddataset)})
          output$waitmssg<-renderText({"Please wait until data loading is completed. This may take some minutes."})
          output$initmssg<-renderText({"No data has been loaded. Please upload a file and click the 'Submit dataset' button."})
 
          outputOptions(output, "summary_produced", suspendWhenHidden = FALSE)
-         #outputOptions(output, "data_loaded", suspendWhenHidden = FALSE)
          
          # 
 ############################
@@ -338,15 +315,15 @@ server <- function(input, output, session) {
                                                                    )
                                                              ) 
                                                             ),
-                                                      conditionalPanel(condition="(input.adddataset>0 || $('html').hasClass('shiny-busy') || $('summaryTPC').hasClass('recalculating'))&&(!output.summary_produced)",
-                                                                       fluidPage(
-                                                                         fluidRow(
-                                                                           box(textOutput("waitmssg")),
-                                                                           renderImage({list(src="/data/manke/sikora/shiny_apps/Agmh.gif",width=200,height=200)},deleteFile =FALSE)
-                                                                        )
-                                                                      )
-                                                                       ),
-                                                      conditionalPanel(condition="(input.adddataset==0)",
+                                                     # conditionalPanel(condition="(input.adddataset>0 ||$('html').hasClass('shiny-busy') || $('summaryTPC').hasClass('recalculating'))&&((!output.summary_produced)&&(output.init_checks_passed)", # &&(!output.waiting_for_click))
+                                                      #                 fluidPage(
+                                                       #                  fluidRow(
+                                                        #                   box(textOutput("waitmssg")),
+                                                         #                  renderImage({list(src="/data/manke/sikora/shiny_apps/Agmh.gif",width=200,height=200)},deleteFile =FALSE)
+                                                          #              )
+                                                           #           )
+                                                            #           ),
+                                                      conditionalPanel(condition="(input.adddataset==0) || !output.init_checks_passed ", #|| output.waiting_for_click
                                                                        fluidPage(
                                                                          fluidRow(
                                                                            box(textOutput("initmssg"))

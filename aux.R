@@ -9,12 +9,50 @@ load_libs<-function(pg_choice,Rlib){
       library(monocle,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
            } 
-  
+  # 
   library(ggplot2)
   library(gplots)
   library(RColorBrewer)
   library(cluster,lib.loc=Rlib)
+}
+
+
+check_class<-function(pg_choice,sc){
+  if(pg_choice=="RaceID3"){
+    #check class
+    if (class(sc)[1]=="SCseq"){
+      res<-TRUE
+    }else{
+      res<-FALSE
+    }
+  } else if (pg_choice == "Monocle"){
+    if(class(sc)[1]=="CellDataSet"){
+      res<-TRUE
+    }else{
+      res<-FALSE
+    }
   }
+  return(res)
+}
+
+check_slots<-function(pg_choice,sc){
+  if(pg_choice=="RaceID3"){
+    #check class
+    if (all(isTruthy(sc@ndata),isTruthy(sc@tsne),isTruthy(sc@cluster$kpart),isTruthy(sc@distances),isTruthy(sc@cpart))){
+      res<-TRUE
+    }else{
+      res<-FALSE
+    }
+  } else if (pg_choice == "Monocle"){
+    if(all(isTruthy(sc@reducedDimA),isTruthy(pData(sc)$Cluster),isTruthy(pData(sc)$rho))){
+      res<-TRUE
+    }else{
+      res<-FALSE
+    }
+  }
+  return(res)
+}
+
 
 get_cluinit<-function(pg_choice,sc){
    if(pg_choice=="RaceID3"){
