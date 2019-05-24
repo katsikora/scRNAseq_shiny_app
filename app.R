@@ -333,7 +333,7 @@ server <- function(input, output, session) {
                                                               
                                                           ),
                                                 ##
-                                                tabPanel(title="Cluster.Number",
+                                                tabPanel(title="tSNE map and clustering",
                                                          fluidPage(
                                                            box(plotOutput("tsneClu"),width=5,height=600),
                                                            box(title = "Plot controls",uiOutput("CluCtrl")),
@@ -360,7 +360,7 @@ server <- function(input, output, session) {
                                                          #actionButton(inputId="clearRowSel",label="Clear row selection")
                                                          
                                                 #),
-                                                   tabPanel(title="Tsne.Map",
+                                                   tabPanel(title="Marker gene visualization",
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
                                                           box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE")),
@@ -369,22 +369,29 @@ server <- function(input, output, session) {
                                                           actionButton(inputId="plottsne",label="Plot tsne map")
                                                                 )
                                                               ),
-                                                   tabPanel(title="Top.Correl.Genes",
+                                                   tabPanel(title="Correlation analyses",
                                                       fluidPage(
+                                                        fluidRow(
                                                           box(plotOutput("corlog2"),width=4),
-                                                          box(tableOutput("top10cor")),
+                                                          box(tableOutput("top10cor"),height=420)
+                                                          ),
+                                                        fluidRow(
                                                           box(title="Method Description",renderText("Pearson correlation was calculated between log2-transformed aggregated counts for gene selection and all log2-transformed genes in the ndata slot of the sc object. Top 10 genes are listed.")),
                                                           box(title="Genes used",textOutput("genesSel2"),textOutput("genesExpr2"))
-                                                               )
                                                           ),
-                                                  tabPanel(title="Pairwise.Expression",
-                                                      fluidPage(
+                                                       fluidRow(
                                                           box(plotOutput("pwplot"),width=4),
                                                           box(title = "Select gene(s) X",textInput(inputId="pwselX", label="Gene symbol(s) for X axis",value="")),
                                                           box(title = "Select gene(s) Y",textInput(inputId="pwselY", label="Gene symbol(s) for Y axis",value="")),
-                                                          box(textInput("pwcortit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE")),
-                                                          actionButton(inputId="plotpwcor",label="Plot expression"),
-                                                          box(title="Method Description",renderText("Pairwise plot of normalized counts."))
+                                                          box(textInput("pwcortit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"))
+                                                           ),
+                                                       fluidRow(actionButton(inputId="plotpwcor",label="Plot expression",width="200px",style = "color: black;background-color:  	 	#6495ED"),
+                                                                box(title="Method Description",renderText("Pairwise plot of normalized counts.")))
+                                                          )
+                                                   ),
+                                                  tabPanel(title="Pairwise.Expression",
+                                                      fluidPage(
+                                                          
                                                           
                                                                )
                                                           ),
