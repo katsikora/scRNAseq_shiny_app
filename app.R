@@ -340,8 +340,8 @@ server <- function(input, output, session) {
                                                            box(plotOutput("silhPlot")),
                                                            box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5),
                                                            box(title="Method Description",renderText(cludesc[input$selectformat])),
-                                                           box(actionButton(inputId="plotclu",label="Plot clusters on tsne"),
-                                                           actionButton(inputId="getmkrs",label="Get marker genes"),width=6),
+                                                           box(actionButton(inputId="plotclu",label="Plot clusters on tsne",style = "color: black;background-color:#6495ED"),
+                                                           actionButton(inputId="getmkrs",label="Get marker genes",style = "color: black;background-color:#F5DEB3"),width=6),
                                                            box(plotOutput("geneheatmap"),width=6),
                                                            box(downloadButton(outputId="downloadTable", label="Download table"),width=5),
                                                            box(title="Marker genes",sliderInput("numDEGs", "Number of top markers",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=5)
@@ -366,7 +366,7 @@ server <- function(input, output, session) {
                                                           box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE")),
                                                           box(title="Method Description",renderText("(Log) counts were aggregated over selected genes and the expression levels were colour-coded on the tsne map.")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
-                                                          actionButton(inputId="plottsne",label="Plot tsne map")
+                                                          actionButton(inputId="plottsne",label="Plot tsne map",width="200px",style = "color: black;background-color:#6495ED")
                                                                 )
                                                               ),
                                                    tabPanel(title="Correlation analyses",
@@ -389,12 +389,7 @@ server <- function(input, output, session) {
                                                                 box(title="Method Description",renderText("Pairwise plot of normalized counts.")))
                                                           )
                                                    ),
-                                                  tabPanel(title="Pairwise.Expression",
-                                                      fluidPage(
-                                                          
-                                                          
-                                                               )
-                                                          ),
+                                                  
                                                   tabPanel(title="sessionInfo",
                                                       fluidPage(
                                                           verbatimTextOutput("sessionInfo"),
