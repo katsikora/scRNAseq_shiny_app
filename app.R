@@ -23,7 +23,6 @@ ui <- function(request) {dashboardPage(
       selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle"), selected = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       actionButton(inputId="adddataset", label="Submit dataset"),
-      textOutput("fileDescription"),
       imageOutput("logo"),
       textOutput("version"),
       tags$footer("Copyright 2018 MPI-IE Freiburg Bioinfo Core Unit"),
@@ -42,10 +41,10 @@ ui <- function(request) {dashboardPage(
 server <- function(input, output, session) {
   
     
-    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose  R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cluster.Number\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for or select genes from the annotation table.</li><li>4.If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Tsne.Map\". At the same time, top correlated genes will be listed in the tab \"Top.Correl.Genes\". </li><li>5.To plot pairwise gene expression of genes of interest, enter gene IDs to use for the X and for the Y axes in the tab \"Pairwise.Expression\"</li></ul>"))
+    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose  R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"tSNE map and clustering\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for. If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Marker Gene Visualization\". </li><li>4.To  list top10 correlated genes as well as to plot pairwise gene expression of genes of interest, go to the tab \"Correlation Analyses\"</li></ul>"))
     output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/maxplanck-ie/scRNAseq_shiny_app .")
     
-    output$fileDescription<-renderText("GeneID: Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
+    output$fileDescription<-renderText("Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
     
     output$logo<-renderImage({list(src="/data/manke/sikora/shiny_apps/userIN_to_yaml/MPIIE_logo_sRGB.jpg",width=100,height=100)},deleteFile =FALSE)
     
@@ -335,18 +334,21 @@ server <- function(input, output, session) {
                                                 ##
                                                 tabPanel(title="tSNE map and clustering",
                                                          fluidPage(
-                                                           box(plotOutput("tsneClu"),width=5,height=600),
-                                                           box(title = "Plot controls",uiOutput("CluCtrl")),
-                                                           box(plotOutput("silhPlot")),
-                                                           box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5),
-                                                           box(title="Method Description",renderText(cludesc[input$selectformat])),
-                                                           box(actionButton(inputId="plotclu",label="Plot clusters on tsne",style = "color: black;background-color:#6495ED"),
-                                                           actionButton(inputId="getmkrs",label="Get marker genes",style = "color: black;background-color:#F5DEB3"),width=6),
-                                                           box(plotOutput("geneheatmap"),width=6),
-                                                           box(downloadButton(outputId="downloadTable", label="Download table"),width=5),
-                                                           box(title="Marker genes",sliderInput("numDEGs", "Number of top markers",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=5)
-                                                         
-                                                         )
+                                                           fluidRow(
+                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5),
+                                                             box(title="Silhoutte Plot",plotOutput("silhPlot"))
+                                                           ),
+                                                           fluidRow(
+                                                             box(plotOutput("tsneClu"),width=5,height=600),
+                                                             box(title="Method Description",renderText(cludesc[input$selectformat])),
+                                                             box(title = "Plot controls",uiOutput("CluCtrl")),
+                                                             box(actionButton(inputId="plotclu",label="Plot clusters on tsne",style = "color: black;background-color:#6495ED"))),
+                                                           fluidRow(
+                                                            actionButton(inputId="getmkrs",label="Get marker genes",style = "color: black;background-color:#F5DEB3"),
+                                                            box(plotOutput("geneheatmap"),width=6),
+                                                            box(title="Marker genes",sliderInput("numDEGs", "Number of top markers",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=6)),
+                                                          fluidRow(box(downloadButton(outputId="downloadTable", label="Download table"),width=5))
+                                                )
 
                                                 ),##
                                                 
@@ -366,7 +368,7 @@ server <- function(input, output, session) {
                                                           box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),actionButton(inputId="plottsne",label="Plot tsne map",width="200px",style = "color: black;background-color:#6495ED")),
                                                           box(title="Method Description",renderText("(Log) counts were aggregated over selected genes and the expression levels were colour-coded on the tsne map.")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
-                                                          box(uiOutput("geneid",width=4))
+                                                          box(uiOutput("geneid",width=4),textOutput("fileDescription"))
                                                                 )
                                                               ),
                                                    tabPanel(title="Correlation Analyses",
