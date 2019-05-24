@@ -23,8 +23,6 @@ ui <- function(request) {dashboardPage(
       selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle"), selected = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       actionButton(inputId="adddataset", label="Submit dataset"),
-      textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
-      actionButton("selectgenes", "Select genes"),
       textOutput("fileDescription"),
       imageOutput("logo"),
       textOutput("version"),
@@ -288,7 +286,9 @@ server <- function(input, output, session) {
              base::saveRDS(isolate(values$sc),file=con)
            }
          )
-    
+        
+         output$geneid<-renderUI({tagList(textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
+                                  actionButton("selectgenes", "Select genes",style = "color: black;background-color:#6495ED"))})
          
          output$summary_produced<-reactive({isTruthy(values$summaryTPC)})
          output$waitmssg<-renderText({"Please wait until data loading is completed. This may take some minutes."})
@@ -298,14 +298,14 @@ server <- function(input, output, session) {
          
          # 
 ############################
-    output$resultPanels<-renderUI({myTabs<-list(tabPanel(title="WalkThrough",
+    output$resultPanels<-renderUI({myTabs<-list(tabPanel(title="Walkthrough",
                                                       fluidPage(
                                                           box(title="Walkthrough",uiOutput("walkThrough")),
                                                           box(title="Miscellaneous information",textOutput("FAQ")),
                                                           downloadButton("get_vignette", label = "Download vignette html")
                                                                )
                                                           ),
-                                                  tabPanel(title="InputData",
+                                                  tabPanel(title="Input Data",
                                                            conditionalPanel(condition=("output.summary_produced"),
                                                       fluidPage(
                                                           fluidRow(
@@ -360,16 +360,16 @@ server <- function(input, output, session) {
                                                          #actionButton(inputId="clearRowSel",label="Clear row selection")
                                                          
                                                 #),
-                                                   tabPanel(title="Marker gene visualization",
+                                                   tabPanel(title="Marker Gene Visualization",
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
-                                                          box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE")),
+                                                          box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),actionButton(inputId="plottsne",label="Plot tsne map",width="200px",style = "color: black;background-color:#6495ED")),
                                                           box(title="Method Description",renderText("(Log) counts were aggregated over selected genes and the expression levels were colour-coded on the tsne map.")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
-                                                          actionButton(inputId="plottsne",label="Plot tsne map",width="200px",style = "color: black;background-color:#6495ED")
+                                                          box(uiOutput("geneid",width=4))
                                                                 )
                                                               ),
-                                                   tabPanel(title="Correlation analyses",
+                                                   tabPanel(title="Correlation Analyses",
                                                       fluidPage(
                                                         fluidRow(
                                                           box(plotOutput("corlog2"),width=4),
@@ -390,7 +390,7 @@ server <- function(input, output, session) {
                                                           )
                                                    ),
                                                   
-                                                  tabPanel(title="sessionInfo",
+                                                  tabPanel(title="Session Info",
                                                       fluidPage(
                                                           verbatimTextOutput("sessionInfo"),
                                                           downloadButton(outputId="downloadSessionInfo", label="Download session info"),
