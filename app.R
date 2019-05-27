@@ -397,12 +397,12 @@ server <- function(input, output, session) {
                                                           ),
                                                        fluidRow(
                                                           box(plotOutput("pwplot"),width=4),
-                                                          box(title = "Select gene(s) X",textInput(inputId="pwselX", label="Gene symbol(s) for X axis",value="")),
-                                                          box(title = "Select gene(s) Y",textInput(inputId="pwselY", label="Gene symbol(s) for Y axis",value="")),
+                                                          box(title = "Select gene(s) X",textInput(inputId="pwselX", label="Gene symbol(s) for X axis (semicolon-separated)",value="")),
+                                                          box(title = "Select gene(s) Y",textInput(inputId="pwselY", label="Gene symbol(s) for Y axis (semicolon-separated)",value="")),
                                                           box(textInput("pwcortit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"))
                                                            ),
                                                        fluidRow(actionButton(inputId="plotpwcor",label="Plot expression",width="200px",style = "color: black;background-color:  	 	#6495ED"),
-                                                                box(title="Method Description",renderText("Pairwise plot of normalized counts.")))
+                                                                box(title="Method Description",renderText("Pairwise plot of normalized counts, aggregated by summing over provided Gene IDs for each axis.")))
                                                           )
                                                    ),
                                                   
