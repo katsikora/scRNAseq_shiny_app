@@ -137,6 +137,9 @@ server <- function(input, output, session) {
        output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
     ###########################################################################################################      
        observeEvent(input$plotclu, {
+         showModal(modalDialog(title = "YOUR REQUEST IS BEING PROCESSED",
+                               "The cells are being reclustered. Please allow (up to) some minutes.",
+                               easyClose = TRUE)) 
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
            sc<-values$sc
        output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
@@ -146,7 +149,9 @@ server <- function(input, output, session) {
     ###########################################################################################################   
        
         observeEvent(input$getmkrs, {
-         showNotification("The markers are being calculated. Please allow some minutes.",type="warning",duration=15)#to get a yellow background  
+          showModal(modalDialog(title = "YOUR REQUEST IS BEING PROCESSED",
+                                "The markers for the new clusters are being extracted. Please allow (up to) some minutes.",
+                                easyClose = TRUE))  
          sc<-values$sc
          top10_seuset<-get_top10(input$selectformat,sc)
          top10<-top10_seuset[[1]]
