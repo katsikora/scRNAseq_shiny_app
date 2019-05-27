@@ -133,6 +133,8 @@ server <- function(input, output, session) {
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
        output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
+       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
+       output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
     ###########################################################################################################      
        observeEvent(input$plotclu, {
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
@@ -341,7 +343,7 @@ server <- function(input, output, session) {
                                                            fluidRow(
                                                              box(title="tSNE map with cluster assignment",plotOutput("tsneClu"),width=5,height=600),
                                                              box(title="Method Description",renderText(cludesc[input$selectformat])),
-                                                             box(title = "Plot controls",uiOutput("CluCtrl"),actionButton(inputId="plotclu",label="Plot clusters on tsne",style = "color: black;background-color:#6495ED"))
+                                                             box(title = "Plot controls",uiOutput("CluCtrl"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))
                                                          ),
                                                            fluidRow(
                                                             box(title="Heatmap of top marker genes",plotOutput("geneheatmap"),width=6),
