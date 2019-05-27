@@ -380,7 +380,7 @@ server <- function(input, output, session) {
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
                                                           box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),actionButton(inputId="plottsne",label="Plot tsne map",width="200px",style = "color: black;background-color:#6495ED")),
-                                                          box(title="Method Description",renderText("(Log) counts were aggregated over selected genes and the expression levels were colour-coded on the tsne map.")),
+                                                          box(title="Method Description",renderText("(Log) counts were aggregated over selected genes as sum and the resulting expression levels were colour-coded on the tsne map.")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
                                                           box(uiOutput("geneid",width=4),textOutput("fileDescription"))
                                                                 )
