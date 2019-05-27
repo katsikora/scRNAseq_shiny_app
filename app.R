@@ -270,6 +270,12 @@ server <- function(input, output, session) {
             inpwselYL<-isolate(input$pwselY)}
             inpwselX<-trimws(unlist(strsplit(inpwselXL,split=";")))
             inpwselY<-trimws(unlist(strsplit(inpwselYL,split=";")))
+            xtest<-inpwselX[inpwselX %in% rownames(ndata)]
+            ytest<-inpwselY[inpwselY %in% rownames(ndata)]
+            if(any(!isTruthy(xtest),!isTruthy(ytest))){
+              showModal(modalDialog(title = "NO EXPRESSED GENES IN SELECTION!","The GeneIDs you provided either don't match your countdata gene identifiers or are not expressed in at least 1 cell.",easyClose = TRUE))
+            }
+            req(xtest,ytest)
             plotdat<-as.data.frame(cbind(colSums(ndata[rownames(ndata) %in% inpwselX,]),colSums(ndata[rownames(ndata) %in% inpwselY,])),stringsAsFactors=FALSE)
             colnames(plotdat)<-c("X","Y")
             
