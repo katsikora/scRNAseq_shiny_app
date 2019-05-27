@@ -220,15 +220,13 @@ server <- function(input, output, session) {
           inGenes<-trimws(gsub("--","__",inGenes))
           values$inGenes<-inGenes
           output$genesSel<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
-          output$genesSel2<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
           ndata<-isolate(values$ndata)
           
           nv<-inGenes[inGenes %in% rownames(ndata)]
           if(!isTruthy(nv)){showModal(modalDialog(title = "NO EXPRESSED GENES IN SELECTION!","The GeneIDs you provided either don't match your countdata gene identifiers or are not expressed in at least 1 cell.",easyClose = TRUE))}
           req(nv)
           output$genesExpr<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
-          output$genesExpr2<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
-          
+
           
         },ignoreInit=TRUE) #end observe selectgenes
         
@@ -250,6 +248,26 @@ server <- function(input, output, session) {
             }#fi
        },ignoreInit=TRUE)#end of observe plottsne
        
+       
+       observeEvent(input$selectgenes2,{
+         inGenesL<-isolate(input$geneid2)
+         if(inGenesL!=""){
+           inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
+         inGenes<-trimws(gsub("--","__",inGenes))
+         values$inGenes2<-inGenes
+         output$genesSel2<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
+         ndata<-isolate(values$ndata)
+         
+         nv<-inGenes[inGenes %in% rownames(ndata)]
+         if(!isTruthy(nv)){showModal(modalDialog(title = "NO EXPRESSED GENES IN SELECTION!","The GeneIDs you provided either don't match your countdata gene identifiers or are not expressed in at least 1 cell.",easyClose = TRUE))}
+         req(nv)
+         output$genesExpr2<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
+         
+         
+         inGenes<-isolate(values$inGenes2)
+         ndata<-isolate(values$ndata)
+         
+         nv<-inGenes[inGenes %in% rownames(ndata)]
             ###produce top correlated genes for aggregated selected gene(s)
             cor.log2<-cor(x=log2(colSums(ndata[rownames(ndata) %in% nv,])+0.1),y=t(log2(ndata+0.1))) 
             cor.log2T<-as.data.frame(t(cor.log2),stringsAsFactors=FALSE)
@@ -259,11 +277,10 @@ server <- function(input, output, session) {
             output$corlog2<-renderPlot({ggplot(cor.log2T)+geom_violin(aes(x="all",y=cor))})
             
             output$top10cor<-renderTable({head(cor.log2T[,"cor",drop=FALSE],n=10)},caption="Top 10 correlated genes",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
+            
+       },ignoreInit=TRUE)#end of observe selectgenes2
  
 
-       
-       
-       
 
         observeEvent(input$plotpwcor,{
             sc<-isolate(values$sc)
@@ -306,6 +323,9 @@ server <- function(input, output, session) {
         
          output$geneid<-renderUI({tagList(textInput(inputId="geneid", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
                                   actionButton("selectgenes", "Select genes",style = "color: black;background-color:#6495ED"))})
+         
+         output$geneid2<-renderUI({tagList(textInput(inputId="geneid2", label="GeneID", value="",placeholder="TYPE IN GENE ID"),
+                                          actionButton("selectgenes2", "Select genes",style = "color: black;background-color:#6495ED"))})
          
          output$summary_produced<-reactive({isTruthy(values$summaryTPC)})
          output$waitmssg<-renderText({"Please wait until data loading is completed. This may take some minutes."})
@@ -392,7 +412,8 @@ server <- function(input, output, session) {
                                                       fluidPage(
                                                         fluidRow(
                                                           box(plotOutput("corlog2"),width=4),
-                                                          box(tableOutput("top10cor"),height=420)
+                                                          box(tableOutput("top10cor"),width=4,height=420),
+                                                          box(uiOutput("geneid2"),width=4)
                                                           ),
                                                         fluidRow(
                                                           box(title="Method Description",renderText("Pearson correlation was calculated between log2-transformed aggregated counts for gene selection and all log2-transformed genes in the ndata slot of the sc object. Top 10 genes are listed.")),
