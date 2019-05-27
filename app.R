@@ -217,13 +217,15 @@ server <- function(input, output, session) {
           inGenesL<-isolate(input$geneid)
           if(inGenesL!=""){
              inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
-          inGenes<-gsub("--","__",inGenes)
+          inGenes<-trimws(gsub("--","__",inGenes))
           values$inGenes<-inGenes
           output$genesSel<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
           output$genesSel2<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
           ndata<-isolate(values$ndata)
           
           nv<-inGenes[inGenes %in% rownames(ndata)]
+          if(!isTruthy(nv)){showModal(modalDialog(title = "NO EXPRESSED GENES IN SELECTION!","The GeneIDs you provided either don't match your countdata gene identifiers or are not expressed in at least 1 cell.",easyClose = TRUE))}
+          req(nv)
           output$genesExpr<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
           output$genesExpr2<-renderText({paste0("Expressed genes: ",paste0(nv,collapse=" "))})
           
@@ -266,8 +268,8 @@ server <- function(input, output, session) {
             if((input$pwselX!="")&(input$pwselY!="")){
             inpwselXL<-isolate(input$pwselX)
             inpwselYL<-isolate(input$pwselY)}
-            inpwselX<-unlist(strsplit(inpwselXL,split=";"))
-            inpwselY<-unlist(strsplit(inpwselYL,split=";"))
+            inpwselX<-trimws(unlist(strsplit(inpwselXL,split=";")))
+            inpwselY<-trimws(unlist(strsplit(inpwselYL,split=";")))
             plotdat<-as.data.frame(cbind(colSums(ndata[rownames(ndata) %in% inpwselX,]),colSums(ndata[rownames(ndata) %in% inpwselY,])),stringsAsFactors=FALSE)
             colnames(plotdat)<-c("X","Y")
             
