@@ -248,17 +248,20 @@ server <- function(input, output, session) {
                 output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog))})  
             
             }#fi
+       },ignoreInit=TRUE)#end of observe plottsne
+       
             ###produce top correlated genes for aggregated selected gene(s)
             cor.log2<-cor(x=log2(colSums(ndata[rownames(ndata) %in% nv,])+0.1),y=t(log2(ndata+0.1))) 
-            output$corlog2<-renderPlot({boxplot(t(cor.log2))})
             cor.log2T<-as.data.frame(t(cor.log2),stringsAsFactors=FALSE)
             colnames(cor.log2T)<-"cor"
             cor.log2T$abscor<-abs(cor.log2T$cor)
             cor.log2T<-cor.log2T[order(cor.log2T$abscor,decreasing=TRUE),]
+            output$corlog2<-renderPlot({ggplot(cor.log2T)+geom_violin(aes(x="all",y=cor))})
+            
             output$top10cor<-renderTable({head(cor.log2T[,"cor",drop=FALSE],n=10)},caption="Top 10 correlated genes",caption.placement = getOption("xtable.caption.placement", "top"),include.rownames=TRUE)
  
 
-       },ignoreInit=TRUE)#end of observe plottsne
+       
        
        
 
