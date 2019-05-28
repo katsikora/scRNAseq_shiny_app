@@ -17,23 +17,21 @@ library(DT) #,lib.loc=Rlib,verbose=TRUE
 ui <- function(request) {dashboardPage(
     dashboardHeader(title = "Dataset selection"),
     ## Sidebar content
-    dashboardSidebar(
+    dashboardSidebar(tagList(
 
       #selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]"), selected = NULL),#"PLEASE SELECT A GENOME",, selected = NULL
       selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle"), selected = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       actionButton(inputId="adddataset", label="Submit dataset"),
-      imageOutput("logo"),
-      textOutput("version"),
-      tags$footer("Copyright 2018 MPI-IE Freiburg Bioinfo Core Unit"),
-      bookmarkButton()
-        ),
+      tags$footer(list(textOutput("version"),"Copyright 2018 MPI-IE Freiburg Bioinfo Core Unit",imageOutput("logo")),style = "position:absolute;bottom:0")
+            )),
         
     dashboardBody(
         h2("Single cell RNAseq analysis"),
         uiOutput("resultPanels")
-               
     )
+               
+    
 
  )}
 
@@ -45,6 +43,7 @@ server <- function(input, output, session) {
     output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/maxplanck-ie/scRNAseq_shiny_app .")
     
     output$fileDescription<-renderText("Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
+    output$fileDescription2<-renderText("Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
     
     output$logo<-renderImage({list(src="/data/manke/sikora/shiny_apps/userIN_to_yaml/MPIIE_logo_sRGB.jpg",width=100,height=100)},deleteFile =FALSE)
     
@@ -413,7 +412,7 @@ server <- function(input, output, session) {
                                                         fluidRow(
                                                           box(plotOutput("corlog2"),width=4),
                                                           box(tableOutput("top10cor"),width=4,height=420),
-                                                          box(uiOutput("geneid2"),width=4)
+                                                          box(uiOutput("geneid2"),textOutput("fileDescription2"),width=4)
                                                           ),
                                                         fluidRow(
                                                           box(title="Method Description",renderText("Pearson correlation was calculated between log2-transformed aggregated counts for gene selection and all log2-transformed genes in the ndata slot of the sc object. Top 10 genes are listed.")),
