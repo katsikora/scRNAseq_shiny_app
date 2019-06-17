@@ -8,7 +8,9 @@ load_libs<-function(pg_choice,Rlib){
      } else if (pg_choice == "Monocle2"){
       library(monocle,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
-           } 
+           } else if (pg_choice == "Seurat3"){
+             library(Seurat,lib.loc=Rlib)
+           }
   # 
   library(ggplot2)
   library(gplots)
@@ -30,7 +32,13 @@ check_class<-function(pg_choice,sc){
       res<-TRUE
     }else{
       res<-FALSE
-    }
+      }
+    }else if (pg_choice == "Seurat3"){
+      if(class(sc)[1]=="Seurat"){
+        res<-TRUE
+      }else{
+        res<-FALSE
+      }
   }
   return(res)
 }
@@ -49,6 +57,12 @@ check_slots<-function(pg_choice,sc){
     }else{
       res<-FALSE
     }
+  }else if (pg_choice == "Seurat3"){
+    if(all(isTruthy(length(sc@commands)>=7),isTruthy(sc@active.assay %in% "RNA"),isTruthy(startsWith(as.character(sc@version),"3")),isTruthy("FindClusters" %in% names(sc@commands)),isTruthy("RunTSNE" %in% names(sc@commands)))){
+      res<-TRUE
+    }else{
+      res<-FALSE
+    }
   }
   return(res)
 }
@@ -60,8 +74,12 @@ get_cluinit<-function(pg_choice,sc){
     cluinit<-max(sc@cluster$kpart)}
    else if (pg_choice == "Monocle2"){
     cluinit<-max(as.numeric(pData(sc)$Cluster))}
+   else if (pg_choice == "Seurat3"){
+    cluinit<-max(as.numeric(sc[[]]$seurat_clusters))+1}
    return(cluinit)
 }
+
+#seuset@commands$FindClusters@params[["resolution"]]
 
 recluster_plot_tsne<-function(pg_choice,sc,numclu){
   if(pg_choice=="RaceID3"){
@@ -84,6 +102,8 @@ get_clu_plot<-function(pg_choice,sc){
     plotmap(sc,final=FALSE)
   }else if (pg_choice == "Monocle2"){
     plot_cell_clusters(sc,1, 2, color="Cluster")
+  }else if (pg_choice == "Seurat3"){
+    DimPlot(object = sc, reduction = "tsne")
   }
 }
 
@@ -96,7 +116,12 @@ plot_silhouette<-function(pg_choice,sc){
     dp<-as.matrix(dist(t(tsne_data)))
     m<-as.integer(pData(sc)$Cluster)
     names(m)<-colnames(dp)
-    }
+      }else if (pg_choice=="Seurat3"){
+        tsne_data<-Embeddings(sc)
+        dp<-as.matrix(dist(t(tsne_data)))
+        m<-as.integer(sc[[]]$seurat_clusters)
+        names(m)<-colnames(dp)
+      }
   si<-silhouette(m,dp)
   plot(si,col=1:max(m), border=NA,main=sprintf("Silhouette plot for %s clusters",max(m)))
 }
@@ -145,6 +170,12 @@ get_top10<-function(pg_choice,sc){
      colnames(top10)[colnames(top10) %in% "cluster"]<-"Cluster"
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
      top10<-as.data.frame(top10,stringsAsFactors=FALSE)
+   }else if (pg_choice == "Seurat3"){
+     markers<-FindAllMarkers(object = seuset,only.pos = TRUE,min.pct = 0.25,thresh.use = 0.25)
+     top10 <- markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(10, avg_logFC)
+     colnames(top10)[colnames(top10) %in% "cluster"]<-"Cluster"
+     colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
+     top10<-as.data.frame(top10,stringsAsFactors=FALSE)
    }
   return(list(top10,seuset))
 }
@@ -164,7 +195,7 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
     heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))
-  }else if (pg_choice == "Monocle2"){
+  }else if (pg_choice == "Monocle2" || pg_choice == "Seuset3"){
     if(!is.null(VariableFeatures(seuset))){
     VariableFeatures(seuset)<-unique(c(VariableFeatures(seuset),genes))
     seuset <- ScaleData(object = seuset)
@@ -177,6 +208,8 @@ render_data_head<-function(pg_choice,sc){
     ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
   }else if (pg_choice == "Monocle2"){
     ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+  }else if (pg_choice == "Seurat3"){
+    ntemp<-as.data.frame(GetAssayData(object = sc, slot = "scale.data"),stringsAsFactors=FALSE)
   }
   return(ntemp)
 }
@@ -187,6 +220,18 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
   }else if (pg_choice == "Monocle2"){
     plotdat<-as.data.frame(t(sc@reducedDimA),stringsAsFactors=FALSE)
     ndata<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
+    l<-apply(ndata[nv,]-.1,2,sum)+.1
+    if (tsnelog) {
+      f <- l == 0
+      l <- log2(l)
+      l[f] <- NA
+    }
+    plotdat$label<-l
+    ggplot(plotdat %>% dplyr::arrange(label), aes(x = V1, y = V2, color = label))+geom_point(size = 2)+
+      scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
+  } else if (pg_choice == "Seurat3"){
+    plotdat<-as.data.frame(t(Embeddings(sc)),stringsAsFactors=FALSE)
+    ndata<-as.data.frame(expm1(as.matrix(seuset[["RNA"]]@data)),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
     if (tsnelog) {
       f <- l == 0
