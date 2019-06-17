@@ -124,7 +124,7 @@ plot_silhouette<-function(pg_choice,sc){
     m<-as.integer(pData(sc)$Cluster)
     names(m)<-colnames(dp)
       }else if (pg_choice=="Seurat3"){
-        tsne_data<-Embeddings(sc)
+        tsne_data<-Embeddings(sc,reduction = "tsne")
         dp<-as.matrix(dist(tsne_data))
         m<-as.integer(sc[[]]$seurat_clusters)
         names(m)<-colnames(dp)
@@ -178,12 +178,12 @@ get_top10<-function(pg_choice,sc){
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
      top10<-as.data.frame(top10,stringsAsFactors=FALSE)
    }else if (pg_choice == "Seurat3"){
-     markers<-FindAllMarkers(object = seuset,only.pos = TRUE,min.pct = 0.25,thresh.use = 0.25)
+     markers<-FindAllMarkers(object = sc,only.pos = TRUE,min.pct = 0.25,thresh.use = 0.25)
      top10 <- markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(10, avg_logFC)
      colnames(top10)[colnames(top10) %in% "cluster"]<-"Cluster"
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
      top10<-as.data.frame(top10,stringsAsFactors=FALSE)
-     seuset<-sc
+     seuset<-NULL
    }
   return(list(top10,seuset))
 }
@@ -203,11 +203,15 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
     heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))
-  }else if (pg_choice == "Monocle2" || pg_choice == "Seuset3"){
+  }else if (pg_choice == "Monocle2"){
     if(!is.null(VariableFeatures(seuset))){
     VariableFeatures(seuset)<-unique(c(VariableFeatures(seuset),genes))
     seuset <- ScaleData(object = seuset)
     DoHeatmap(object = seuset,features=genes)}
+  }else if (pg_choice == "Seurat3"){
+    VariableFeatures(sc)<-unique(c(VariableFeatures(sc),genes))
+    seuset <- ScaleData(object = sc)
+    DoHeatmap(object = seuset,features=genes)
   }
 }
 
@@ -238,7 +242,7 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
     ggplot(plotdat %>% dplyr::arrange(label), aes(x = V1, y = V2, color = label))+geom_point(size = 2)+
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   } else if (pg_choice == "Seurat3"){
-    plotdat<-as.data.frame(t(Embeddings(sc)),stringsAsFactors=FALSE)
+    plotdat<-as.data.frame(Embeddings(sc,reduction = "tsne"),stringsAsFactors=FALSE)
     ndata<-as.data.frame(expm1(as.matrix(seuset[["RNA"]]@data)),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
     if (tsnelog) {
@@ -247,7 +251,7 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
       l[f] <- NA
     }
     plotdat$label<-l
-    ggplot(plotdat %>% dplyr::arrange(label), aes(x = V1, y = V2, color = label))+geom_point(size = 2)+
+    ggplot(plotdat %>% dplyr::arrange(label), aes(x = tSNE_1, y = tSNE_2, color = label))+geom_point(size = 2)+
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   }
 }

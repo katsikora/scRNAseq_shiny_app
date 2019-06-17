@@ -166,6 +166,7 @@ server <- function(input, output, session) {
              topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
              output$topn<-renderTable({topn})
              values$topn<-topn
+             sc<-values$sc
              output$geneheatmap<-renderPlot({get_marker_plot(input$selectformat,sc,topn,seuset)})
              
            })#end of observe numDEGs
