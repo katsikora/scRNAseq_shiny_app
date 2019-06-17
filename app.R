@@ -130,7 +130,7 @@ server <- function(input, output, session) {
        
     ###########################################################################################################   
        cluinit<-get_cluinit(input$selectformat,sc)
-       output$CluCtrl<-renderUI({tagList(sliderInput("numclu", "Number of clusters",min=1,max=2*cluinit,value=cluinit,round=TRUE))})
+       output$CluCtrl<-renderUI({tagList(sliderInput("numclu", ifelse(input$selectformat=="Seurat3","Resolution","Number of clusters"),min=ifelse(input$selectformat=="Seurat3",0,1),max=ifelse(input$selectformat=="Seurat3",1,2*cluinit),value=cluinit,round=TRUE))})
        output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
        output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
        output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})

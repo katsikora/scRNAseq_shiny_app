@@ -75,7 +75,10 @@ get_cluinit<-function(pg_choice,sc){
    else if (pg_choice == "Monocle2"){
     cluinit<-max(as.numeric(pData(sc)$Cluster))}
    else if (pg_choice == "Seurat3"){
-    cluinit<-max(as.numeric(sc[[]]$seurat_clusters))+1}
+     #return resolution rather than the number of clusters
+    #cluinit<-max(as.numeric(sc[[]]$seurat_clusters))}
+     cluinit<-sc@commands$FindClusters@params[["resolution"]]
+   }
    return(cluinit)
 }
 
@@ -93,6 +96,10 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
        scnew<-sc
         if(numclu+1!=max(as.numeric(pData(sc)$Cluster))){
         scnew <- clusterCells(sc, num_clusters=(numclu+1))}
+    }else if (pg_choice == "Seurat3"){
+      #the relevant parameter is resolution rather than number of clusters
+      res<-numclu
+      scnew<-FindClusters(sc,resolution=as.numeric(res),random.seed =314)
     }
   return(scnew)
 } 
@@ -118,7 +125,7 @@ plot_silhouette<-function(pg_choice,sc){
     names(m)<-colnames(dp)
       }else if (pg_choice=="Seurat3"){
         tsne_data<-Embeddings(sc)
-        dp<-as.matrix(dist(t(tsne_data)))
+        dp<-as.matrix(dist(tsne_data))
         m<-as.integer(sc[[]]$seurat_clusters)
         names(m)<-colnames(dp)
       }
@@ -176,6 +183,7 @@ get_top10<-function(pg_choice,sc){
      colnames(top10)[colnames(top10) %in% "cluster"]<-"Cluster"
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
      top10<-as.data.frame(top10,stringsAsFactors=FALSE)
+     seuset<-sc
    }
   return(list(top10,seuset))
 }
@@ -209,7 +217,7 @@ render_data_head<-function(pg_choice,sc){
   }else if (pg_choice == "Monocle2"){
     ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }else if (pg_choice == "Seurat3"){
-    ntemp<-as.data.frame(GetAssayData(object = sc, slot = "scale.data"),stringsAsFactors=FALSE)
+    ntemp<-as.data.frame(expm1(as.matrix(seuset[["RNA"]]@data)),stringsAsFactors=FALSE)
   }
   return(ntemp)
 }
