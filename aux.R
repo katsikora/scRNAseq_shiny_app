@@ -221,7 +221,7 @@ render_data_head<-function(pg_choice,sc){
   }else if (pg_choice == "Monocle2"){
     ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }else if (pg_choice == "Seurat3"){
-    ntemp<-as.data.frame(expm1(as.matrix(seuset[["RNA"]]@data)),stringsAsFactors=FALSE)
+    ntemp<-as.data.frame(expm1(as.matrix(sc[["RNA"]]@data)),stringsAsFactors=FALSE)
   }
   return(ntemp)
 }
@@ -243,7 +243,7 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   } else if (pg_choice == "Seurat3"){
     plotdat<-as.data.frame(Embeddings(sc,reduction = "tsne"),stringsAsFactors=FALSE)
-    ndata<-as.data.frame(expm1(as.matrix(seuset[["RNA"]]@data)),stringsAsFactors=FALSE)
+    ndata<-as.data.frame(expm1(as.matrix(sc[["RNA"]]@data)),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
     if (tsnelog) {
       f <- l == 0
