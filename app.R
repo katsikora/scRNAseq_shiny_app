@@ -20,7 +20,7 @@ ui <- function(request) {dashboardPage(
     dashboardSidebar(tagList(
 
       #selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]"), selected = NULL),#"PLEASE SELECT A GENOME",, selected = NULL
-      selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle"), selected = NULL),
+      selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle2","Seurat3"), selected = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       actionButton(inputId="adddataset", label="Submit dataset"),
       tags$footer(list(textOutput("version"),"Copyright 2018 MPI-IE Freiburg Bioinfo Core Unit",imageOutput("logo")),style = "position:absolute;bottom:0")
@@ -96,7 +96,7 @@ server <- function(input, output, session) {
       if(values$init_checks_passed()){
         #waiting_for_click(0)
         
-      psel<-c("Monocle"="*.mono.set.RData","RaceID3"="sc.minT*.RData") 
+      #psel<-c("Monocle"="*.mono.set.RData","RaceID3"="sc.minT*.RData") 
       inFormat<-isolate(input$selectformat)
       
        if (!is.null(input$file1)){values$datpath<-isolate(input$file1)$datapath}
@@ -162,7 +162,7 @@ server <- function(input, output, session) {
              resnL<-lapply(unique(top10$Cluster),function(X){
                head(top10[top10$Cluster %in% X,],n=input$numDEGs)})
              topn<-as.data.frame(do.call(rbind,resnL))
-             mdict<-c("RaceID3"="padj","Monocle"="p_val_adj")
+             mdict<-c("RaceID3"="padj","Monocle2"="p_val_adj","Seurat3"="p_val_adj")
              topn<-topn[with(topn, order(Cluster, eval(as.name(mdict[input$selectformat])))),]
              output$topn<-renderTable({topn})
              values$topn<-topn
@@ -304,7 +304,7 @@ server <- function(input, output, session) {
 
        },ignoreInit=TRUE)#end of observe input$plotpwcor 
         
-        cludesc<-c("RaceID3"="Kmedoids clustering was run on logpearson distances between cells.","Monocle"="Density peak clustering was run on distances between cells.")
+        cludesc<-c("RaceID3"="Kmedoids clustering was run on logpearson distances between cells.","Monocle2"="Density peak clustering was run on distances between cells.","Seurat3"="placeholder - Louvain")
         
          output$get_vignette <- downloadHandler(
            filename = "scRNAseq_app_vignette.html",

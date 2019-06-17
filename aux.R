@@ -5,7 +5,7 @@ load_libs<-function(pg_choice,Rlib){
   .libPaths(Rlib)
   if(pg_choice=="RaceID3"){
     library(RaceID,lib.loc=Rlib)
-     } else if (pg_choice == "Monocle"){
+     } else if (pg_choice == "Monocle2"){
       library(monocle,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
            } 
@@ -25,7 +25,7 @@ check_class<-function(pg_choice,sc){
     }else{
       res<-FALSE
     }
-  } else if (pg_choice == "Monocle"){
+  } else if (pg_choice == "Monocle2"){
     if(class(sc)[1]=="CellDataSet"){
       res<-TRUE
     }else{
@@ -43,7 +43,7 @@ check_slots<-function(pg_choice,sc){
     }else{
       res<-FALSE
     }
-  } else if (pg_choice == "Monocle"){
+  } else if (pg_choice == "Monocle2"){
     if(all(isTruthy(sc@reducedDimA),isTruthy(pData(sc)$Cluster),isTruthy(pData(sc)$rho))){
       res<-TRUE
     }else{
@@ -58,7 +58,7 @@ get_cluinit<-function(pg_choice,sc){
    if(pg_choice=="RaceID3"){
     sc@cpart<-sc@cluster$kpart
     cluinit<-max(sc@cluster$kpart)}
-   else if (pg_choice == "Monocle"){
+   else if (pg_choice == "Monocle2"){
     cluinit<-max(as.numeric(pData(sc)$Cluster))}
    return(cluinit)
 }
@@ -71,7 +71,7 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
       scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=numclu)
       scnew<-findoutliers(scnew)
       scnew@cpart<-scnew@cluster$kpart 
-    }}else if (pg_choice == "Monocle"){
+    }}else if (pg_choice == "Monocle2"){
        scnew<-sc
         if(numclu+1!=max(as.numeric(pData(sc)$Cluster))){
         scnew <- clusterCells(sc, num_clusters=(numclu+1))}
@@ -82,7 +82,7 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
 get_clu_plot<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
     plotmap(sc,final=FALSE)
-  }else if (pg_choice == "Monocle"){
+  }else if (pg_choice == "Monocle2"){
     plot_cell_clusters(sc,1, 2, color="Cluster")
   }
 }
@@ -91,7 +91,7 @@ plot_silhouette<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
     m <- sc@cluster$kpart
     dp  <- as.dist(sc@distances)
-      }else if (pg_choice=="Monocle"){
+      }else if (pg_choice=="Monocle2"){
     tsne_data<-reducedDimA(sc)
     dp<-as.matrix(dist(t(tsne_data)))
     m<-as.integer(pData(sc)$Cluster)
@@ -104,7 +104,7 @@ plot_silhouette<-function(pg_choice,sc){
 plot_clu_separation<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
     plotsaturation(sc,disp=TRUE)
-  }else if (pg_choice=="Monocle"){
+  }else if (pg_choice=="Monocle2"){
     plot_rho_delta(sc)
   }
 }
@@ -123,7 +123,7 @@ get_top10<-function(pg_choice,sc){
       top10<-as.data.frame(do.call(rbind,res10L))
       top10<-top10[with(top10, order(Cluster, padj)),]
       seuset<-NULL
-   }else if (pg_choice == "Monocle"){
+   }else if (pg_choice == "Monocle2"){
      #convert seurat object from monocle... 
      seuset <- Seurat::CreateSeuratObject(counts=Biobase::exprs(sc), 
                                               min.cells=4,
@@ -164,7 +164,7 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
     heatmap.2(plotdat2, scale="column", trace="none", dendrogram="none",
               col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),labCol="",ColSideColors=colv,Colv=FALSE,Rowv=FALSE,
               main="Gene Selection",margins=c(10,12))
-  }else if (pg_choice == "Monocle"){
+  }else if (pg_choice == "Monocle2"){
     if(!is.null(VariableFeatures(seuset))){
     VariableFeatures(seuset)<-unique(c(VariableFeatures(seuset),genes))
     seuset <- ScaleData(object = seuset)
@@ -175,7 +175,7 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
 render_data_head<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
     ntemp<-as.data.frame(as.matrix(sc@ndata)*5000,stringsAsFactors=FALSE)
-  }else if (pg_choice == "Monocle"){
+  }else if (pg_choice == "Monocle2"){
     ntemp<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
   }
   return(ntemp)
@@ -184,7 +184,7 @@ render_data_head<-function(pg_choice,sc){
 get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
   if(pg_choice=="RaceID3"){
     plotexpmap(sc,nv,n=nt,logsc=tsnelog)
-  }else if (pg_choice == "Monocle"){
+  }else if (pg_choice == "Monocle2"){
     plotdat<-as.data.frame(t(sc@reducedDimA),stringsAsFactors=FALSE)
     ndata<-as.data.frame(t(t(Biobase::exprs(sc)) /  pData(sc)[, 'Size_Factor']),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
