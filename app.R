@@ -305,7 +305,7 @@ server <- function(input, output, session) {
 
        },ignoreInit=TRUE)#end of observe input$plotpwcor 
         
-        cludesc<-c("RaceID3"="Kmedoids clustering was run on logpearson distances between cells.","Monocle2"="Density peak clustering was run on distances between cells.","Seurat3"="placeholder - Louvain")
+        cludesc<-c("RaceID3"="Kmedoids clustering was run on logpearson distances between cells.","Monocle2"="Density peak clustering was run on distances between cells.","Seurat3"="Louvain partitioning of the shared nearest neighbourgh graph was applied.")
         
          output$get_vignette <- downloadHandler(
            filename = "scRNAseq_app_vignette.html",
