@@ -99,7 +99,13 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
     }else if (pg_choice == "Seurat3"){
       #the relevant parameter is resolution rather than number of clusters
       res<-numclu
-      scnew<-FindClusters(sc,resolution=as.numeric(res),random.seed =314)
+      if(paste0("RNA_snn_res.",res) %in% colnames(sc[[]])){
+      sc[["seurat_clusters"]]<-sc[[paste0("RNA_snn_res.",res)]]
+      Idents(object=sc) <- "seurat_clusters"
+      sc@commands$FindClusters@params[["resolution"]]<-as.character(res)
+      scnew<-sc
+      }else{
+      scnew<-FindClusters(sc,resolution=as.numeric(res),random.seed =314) }
     }
   return(scnew)
 } 
