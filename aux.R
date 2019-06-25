@@ -110,13 +110,14 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
   return(scnew)
 } 
 
-get_clu_plot<-function(pg_choice,sc){
+get_clu_plot<-function(pg_choice,sc,red_choice){
   if(pg_choice=="RaceID3"){
     plotmap(sc,final=FALSE)
   }else if (pg_choice == "Monocle2"){
     plot_cell_clusters(sc,1, 2, color="Cluster")
   }else if (pg_choice == "Seurat3"){
-    DimPlot(object = sc, reduction = "tsne")
+    dimred<-c("tSNE"="tsne","UMAP"="umap")
+    DimPlot(object = sc, reduction = dimred[red_choice])
   }
 }
 
@@ -232,7 +233,7 @@ render_data_head<-function(pg_choice,sc){
   return(ntemp)
 }
 
-get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
+get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog,red_choice){
   if(pg_choice=="RaceID3"){
     plotexpmap(sc,nv,n=nt,logsc=tsnelog)
   }else if (pg_choice == "Monocle2"){
@@ -248,7 +249,8 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog){
     ggplot(plotdat %>% dplyr::arrange(label), aes(x = V1, y = V2, color = label))+geom_point(size = 2)+
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   } else if (pg_choice == "Seurat3"){
-    plotdat<-as.data.frame(Embeddings(sc,reduction = "tsne"),stringsAsFactors=FALSE)
+    dimred<-c("tSNE"="tsne","UMAP"="umap")
+    plotdat<-as.data.frame(Embeddings(sc,reduction =dimred[red_choice]),stringsAsFactors=FALSE)
     ndata<-as.data.frame(expm1(as.matrix(sc[["RNA"]]@data)),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
     if (tsnelog) {

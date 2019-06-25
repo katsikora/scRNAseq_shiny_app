@@ -131,8 +131,10 @@ server <- function(input, output, session) {
     ###########################################################################################################   
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", ifelse(input$selectformat=="Seurat3","Resolution","Number of clusters"),min=ifelse(input$selectformat=="Seurat3",0,1),max=ifelse(input$selectformat=="Seurat3",1,2*cluinit),value=cluinit,round=TRUE))})
+       output$selectdimred<-renderUI({
+          if(input$selectformat=="Seurat3"&isTruthy("RunUMAP" %in% names(sc@commands)) ){tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
        output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
-       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
+       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc,input$selectdimred)})
        output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
     ###########################################################################################################      
        observeEvent(input$plotclu, {
@@ -243,7 +245,7 @@ server <- function(input, output, session) {
             
             if(length(nv)>0){
                 nt<-isolate(input$tsnetit)
-                output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog))})  
+                output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog),input$selectdimred)})  
             
             }#fi
        },ignoreInit=TRUE)#end of observe plottsne
@@ -379,7 +381,7 @@ server <- function(input, output, session) {
                                                            fluidRow(
                                                              box(title="tSNE map with cluster assignment",plotOutput("tsneClu"),width=5,height=600),
                                                              box(title="Method Description",renderText(cludesc[input$selectformat])),
-                                                             box(title = "Plot controls",uiOutput("CluCtrl"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))
+                                                             box(title = "Plot controls",uiOutput("CluCtrl"),uiOutput("selectdimred"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))
                                                          ),
                                                            fluidRow(
                                                             box(title="Heatmap of top marker genes",plotOutput("geneheatmap"),width=6),
