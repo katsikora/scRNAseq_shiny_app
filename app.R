@@ -39,7 +39,7 @@ ui <- function(request) {dashboardPage(
 server <- function(input, output, session) {
   
     
-    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose  R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"tSNE map and clustering\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for. If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Marker Gene Visualization\". </li><li>4.To  list top10 correlated genes as well as to plot pairwise gene expression of genes of interest, go to the tab \"Correlation Analyses\"</li></ul>"))
+    output$walkThrough<-renderUI(HTML("<ul><li>1.Choose  R package used to produce your single cell object. Upload your single cell object in \".RData\" or \".RDS\" format. Click on retrieve dataset. Your data will appear in the InputData tab.</li><li>2.You can visualize the clusters in your dataset as well as change their number in the \"Cell map and clustering\" tab. You can get up to 10 marker genes per cluster and visualize them on a heatmap. </li><li>3.Provide semicolon-separated Gene IDs to calculate aggregate expression for. If your genes are expressed under the filtering criteria, you can visualize their expression on a tsne plot in tab \"Marker Gene Visualization\". </li><li>4.To  list top10 correlated genes as well as to plot pairwise gene expression of genes of interest, go to the tab \"Correlation Analyses\"</li></ul>"))
     output$FAQ<-renderText("Currently, no uniform gene naming system is prerequisite. You have to provide Gene IDs consistent with the naming used to produce your dataset.\n For questions, bug reports or feature requests, contact sikora@ie-freiburg.mpg.de.\n For reporting issues or pull requests on GitHub, go to https://github.com/maxplanck-ie/scRNAseq_shiny_app .")
     
     output$fileDescription<-renderText("Please provide a semicolon-separated list of Gene IDs you would like to obtain results for.")
@@ -132,7 +132,7 @@ server <- function(input, output, session) {
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", ifelse(input$selectformat=="Seurat3","Resolution","Number of clusters"),min=ifelse(input$selectformat=="Seurat3",0,1),max=ifelse(input$selectformat=="Seurat3",1,2*cluinit),value=cluinit,round=TRUE))})
        output$selectdimred<-renderUI({
-          if(input$selectformat=="Seurat3"&isTruthy("RunUMAP" %in% names(sc@commands)) ){tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
+          if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
        output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
        output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc,input$selectdimred)})
        output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
@@ -372,14 +372,14 @@ server <- function(input, output, session) {
                                                               
                                                           ),
                                                 ##
-                                                tabPanel(title="tSNE map and clustering",
+                                                tabPanel(title="Cell map and clustering",
                                                          fluidPage(
                                                            fluidRow(
                                                              box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5),
                                                              box(title="Silhoutte Plot",plotOutput("silhPlot"))
                                                            ),
                                                            fluidRow(
-                                                             box(title="tSNE map with cluster assignment",plotOutput("tsneClu"),width=5,height=600),
+                                                             box(title="Cell map with cluster assignment",plotOutput("tsneClu"),width=5,height=600),
                                                              box(title="Method Description",renderText(cludesc[input$selectformat])),
                                                              box(title = "Plot controls",uiOutput("CluCtrl"),uiOutput("selectdimred"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))
                                                          ),
@@ -404,8 +404,8 @@ server <- function(input, output, session) {
                                                    tabPanel(title="Marker Gene Visualization",
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
-                                                          box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),actionButton(inputId="plottsne",label="Plot tsne map",width="200px",style = "color: black;background-color:#6495ED")),
-                                                          box(title="Method Description",renderText("(Log) counts were aggregated over selected genes as sum and the resulting expression levels were colour-coded on the tsne map.")),
+                                                          box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),actionButton(inputId="plottsne",label="Plot cell map",width="200px",style = "color: black;background-color:#6495ED")),
+                                                          box(title="Method Description",renderText("(Log) counts were aggregated over selected genes as sum and the resulting expression levels were colour-coded on the cell map.")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
                                                           box(uiOutput("geneid",width=4),textOutput("fileDescription"))
                                                                 )
