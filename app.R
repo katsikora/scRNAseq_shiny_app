@@ -133,6 +133,7 @@ server <- function(input, output, session) {
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", ifelse(input$selectformat=="Seurat3","Resolution","Number of clusters"),min=ifelse(input$selectformat=="Seurat3",0,1),max=ifelse(input$selectformat=="Seurat3",1,2*cluinit),value=cluinit,round=TRUE))})
        output$selectdimred<-renderUI({
           if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
+       output$selectdimred2<-renderUI({if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred2","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}}) 
        output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
        output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc,input$selectdimred)})
        output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
@@ -142,9 +143,13 @@ server <- function(input, output, session) {
                                "The cells are being reclustered. Please allow (up to) some minutes.",
                                easyClose = TRUE)) 
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
-           sc<-values$sc
-       output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc)})
-       output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
+           output$tsneClu<-renderPlot({
+             sc<-values$sc
+             get_clu_plot(input$selectformat,sc,input$selectdimred)})
+           output$silhPlot<-renderPlot({
+             sc<-values$sc
+             plot_silhouette(input$selectformat,sc)})
+           #})
        },ignoreInit=TRUE)#end observe plotclu
        
     ###########################################################################################################   
@@ -232,8 +237,8 @@ server <- function(input, output, session) {
           
         },ignoreInit=TRUE) #end observe selectgenes
         
-        
-       
+          
+          
        observeEvent(input$plottsne,{
          
             inGenes<-isolate(values$inGenes)
@@ -245,7 +250,7 @@ server <- function(input, output, session) {
             
             if(length(nv)>0){
                 nt<-isolate(input$tsnetit)
-                output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog),input$selectdimred)})  
+                output$tsneAgg<-renderPlot({get_feature_plot(input$selectformat,sc,nv,nt,as.logical(input$tsnelog),input$selectdimred2)})  
             
             }#fi
        },ignoreInit=TRUE)#end of observe plottsne
@@ -404,10 +409,11 @@ server <- function(input, output, session) {
                                                    tabPanel(title="Marker Gene Visualization",
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
-                                                          box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),actionButton(inputId="plottsne",label="Plot cell map",width="200px",style = "color: black;background-color:#6495ED")),
+                                                          box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),uiOutput("selectdimred2"),actionButton(inputId="plottsne",label="Plot cell map",width="200px",style = "color: black;background-color:#6495ED")),
                                                           box(title="Method Description",renderText("(Log) counts were aggregated over selected genes as sum and the resulting expression levels were colour-coded on the cell map.")),
-                                                          box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr")),
-                                                          box(uiOutput("geneid",width=4),textOutput("fileDescription"))
+                                                          box(uiOutput("geneid",width=4),textOutput("fileDescription")),
+                                                          box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr"),width=5)
+                                                          
                                                                 )
                                                               ),
                                                    tabPanel(title="Correlation Analyses",

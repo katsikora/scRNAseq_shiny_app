@@ -102,7 +102,7 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
       if(paste0("RNA_snn_res.",res) %in% colnames(sc[[]])){
       sc[["seurat_clusters"]]<-sc[[paste0("RNA_snn_res.",res)]]
       Idents(object=sc) <- "seurat_clusters"
-      sc@commands$FindClusters@params[["resolution"]]<-as.character(res)
+      sc@commands$FindClusters@params[["resolution"]]<-as.numeric(res)
       scnew<-sc
       }else{
       scnew<-FindClusters(sc,resolution=as.numeric(res),random.seed =314) }
@@ -250,7 +250,7 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog,red_choice){
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   } else if (pg_choice == "Seurat3"){
     dimred<-c("tSNE"="tsne","UMAP"="umap")
-    plotdat<-as.data.frame(Embeddings(sc,reduction =dimred[red_choice]),stringsAsFactors=FALSE)
+    plotdat<-as.data.frame(Embeddings(sc,reduction=dimred[red_choice]),stringsAsFactors=FALSE)
     ndata<-as.data.frame(expm1(as.matrix(sc[["RNA"]]@data)),stringsAsFactors=FALSE)
     l<-apply(ndata[nv,]-.1,2,sum)+.1
     if (tsnelog) {
@@ -259,7 +259,8 @@ get_feature_plot<-function(pg_choice,sc,nv,nt,tsnelog,red_choice){
       l[f] <- NA
     }
     plotdat$label<-l
-    ggplot(plotdat %>% dplyr::arrange(label), aes(x = tSNE_1, y = tSNE_2, color = label))+geom_point(size = 2)+
+    cn<-colnames(plotdat)[1:2]
+    ggplot(plotdat %>% dplyr::arrange(label), aes_string(x =cn[1], y = cn[2], color = "label"))+geom_point(size = 2)+
       scale_colour_continuous(low = "steelblue3", high ="darkorange", space = "Lab", na.value = "grey50",                                                               guide = "colourbar",name=ifelse(tsnelog==FALSE,"Counts","Log2Counts"))+xlab("Dim1")+ylab("Dim2")+theme(axis.text=element_text(size=14),axis.title=element_text(size=16),strip.text=element_text(size=14))+ggtitle(nt)
   }
 }
