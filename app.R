@@ -144,6 +144,7 @@ server <- function(input, output, session) {
          showModal(modalDialog(title = "YOUR REQUEST IS BEING PROCESSED",
                                "The cells are being reclustered. Please allow (up to) some minutes.",
                                easyClose = TRUE)) 
+           sc<-values$sc
            values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
            output$tsneClu<-renderPlot({
              sc<-values$sc
