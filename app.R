@@ -132,8 +132,8 @@ server <- function(input, output, session) {
        cluinit<-get_cluinit(input$selectformat,sc)
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", ifelse(input$selectformat=="Seurat3","Resolution","Number of clusters"),min=ifelse(input$selectformat=="Seurat3",0,1),max=ifelse(input$selectformat=="Seurat3",1,2*cluinit),value=cluinit,round=TRUE))})
        output$selectdimred<-renderUI({
-          if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
-       output$selectdimred2<-renderUI({if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred2","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}}) 
+          if(input$selectformat=="Seurat3"){ if(isTruthy(grepl("RunUMAP.RNA",names(sc@commands)))) {tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
+       output$selectdimred2<-renderUI({if(input$selectformat=="Seurat3"){if(isTruthy(grepl("RunUMAP.RNA",names(sc@commands)))){tagList(selectInput("selectdimred2","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}}) 
        output$cluSep<-renderPlot({
          sc<-values$sc
          plot_clu_separation(input$selectformat,sc)},width=600,height=600)
