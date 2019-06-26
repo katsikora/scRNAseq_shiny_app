@@ -134,7 +134,9 @@ server <- function(input, output, session) {
        output$selectdimred<-renderUI({
           if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
        output$selectdimred2<-renderUI({if(input$selectformat=="Seurat3"&isTruthy(grepl("RunUMAP.RNA",names(sc@commands))) ){tagList(selectInput("selectdimred2","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}}) 
-       output$cluSep<-renderPlot({plot_clu_separation(input$selectformat,sc)})
+       output$cluSep<-renderPlot({
+         sc<-values$sc
+         plot_clu_separation(input$selectformat,sc)},width=600,height=600)
        output$tsneClu<-renderPlot({get_clu_plot(input$selectformat,sc,input$selectdimred)})
        output$silhPlot<-renderPlot({plot_silhouette(input$selectformat,sc)})
     ###########################################################################################################      
@@ -380,7 +382,7 @@ server <- function(input, output, session) {
                                                 tabPanel(title="Cell map and clustering",
                                                          fluidPage(
                                                            fluidRow(
-                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5),
+                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5,height=800),
                                                              box(title="Silhoutte Plot",plotOutput("silhPlot"))
                                                            ),
                                                            fluidRow(

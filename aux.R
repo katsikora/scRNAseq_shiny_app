@@ -10,6 +10,7 @@ load_libs<-function(pg_choice,Rlib){
       library(Seurat,lib.loc=Rlib)
            } else if (pg_choice == "Seurat3"){
              library(Seurat,lib.loc=Rlib)
+             library(clustree,lib.loc=Rlib)
            }
   # 
   library(ggplot2)
@@ -145,6 +146,9 @@ plot_clu_separation<-function(pg_choice,sc){
     plotsaturation(sc,disp=TRUE)
   }else if (pg_choice=="Monocle2"){
     plot_rho_delta(sc)
+  }else if (pg_choice=="Seurat3"){
+    if(length(grep("RNA_snn_res.",colnames(sc[[]])))>1){
+    clustree(sc)}else{plot(0,type='n',axes=FALSE,ann=FALSE)} #,prefix="RNA_snn_res."
   }
 }
 
