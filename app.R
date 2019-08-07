@@ -390,14 +390,10 @@ server <- function(input, output, session) {
                                                              box(title="Cell map with cluster assignment",plotOutput("tsneClu"),width=5,height=600),
                                                              box(title="Method Description",renderText(cludesc[input$selectformat])),
                                                              box(title = "Plot controls",uiOutput("CluCtrl"),uiOutput("selectdimred"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))
-                                                         ),
-                                                           fluidRow(
-                                                            box(title="Heatmap of top marker genes",plotOutput("geneheatmap"),width=6),
-                                                            box(title="Marker genes",actionButton(inputId="getmkrs",label="Get marker genes",style = "color: black;background-color:#F5DEB3"),sliderInput("numDEGs", "Number of top markers to show",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=6)),
-                                                          fluidRow(box(downloadButton(outputId="downloadTable", label="Download table"),width=5))
-                                                )
+                                                         )
 
-                                                ),##
+                                                        )
+                                                ),
                                                 
                                                 #tabPanel(title="Annotation.Table",
                                                          #fluidRow(
@@ -409,6 +405,15 @@ server <- function(input, output, session) {
                                                          #actionButton(inputId="clearRowSel",label="Clear row selection")
                                                          
                                                 #),
+                                                tabPanel(title="Marker Gene Calculation",
+                                                         fluidPage(
+                                                           fluidRow(
+                                                             box(title="Heatmap of top marker genes",plotOutput("geneheatmap"),width=6),
+                                                             box(title="Marker genes",actionButton(inputId="getmkrs",label="Get marker genes",style = "color: black;background-color:#F5DEB3"),sliderInput("numDEGs", "Number of top markers to show",min=1,max=10,value=2,round=TRUE),tableOutput("topn"),width=6)),
+                                                           fluidRow(box(downloadButton(outputId="downloadTable", label="Download table"),width=5))
+                                                         )
+                                                
+                                                ),
                                                    tabPanel(title="Marker Gene Visualization",
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
