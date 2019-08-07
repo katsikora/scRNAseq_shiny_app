@@ -154,6 +154,7 @@ plot_clu_separation<-function(pg_choice,sc){
 
 get_top10<-function(pg_choice,sc){
   if(pg_choice=="RaceID3"){
+    sc@cpart<-sc@cluster$kpart
     res10L<-lapply(unique(sc@cpart),function(X){
         dg<-clustdiffgenes(sc,X,pvalue=.01)
         dgsub<-dg[dg$fc>=2&dg$padj<0.05,]
