@@ -413,7 +413,7 @@ server <- function(input, output, session) {
                                                       fluidPage(
                                                           box(plotOutput("tsneAgg"),width=5),
                                                           box(title = "Plot controls",selectInput("tsnelog", "Log scale",choices=c("TRUE","FALSE"),selected="TRUE"),textInput("tsnetit","Plot title",value="Selected genes",placeholder="TYPE IN PLOT TITLE"),uiOutput("selectdimred2"),actionButton(inputId="plottsne",label="Plot cell map",width="200px",style = "color: black;background-color:#6495ED")),
-                                                          box(title="Method Description",renderText("(Log) counts were aggregated over selected genes as sum and the resulting expression levels were colour-coded on the cell map.")),
+                                                          box(title="Method Description",renderText("Counts were aggregated over selected genes as sum and the resulting (log2) expression levels were colour-coded on the cell map.")),
                                                           box(uiOutput("geneid",width=4),textOutput("fileDescription")),
                                                           box(title="Genes used",textOutput("genesSel"),textOutput("genesExpr"),width=5)
                                                           
@@ -427,7 +427,7 @@ server <- function(input, output, session) {
                                                           box(uiOutput("geneid2"),textOutput("fileDescription2"),width=4)
                                                           ),
                                                         fluidRow(
-                                                          box(title="Method Description",renderText("Pearson correlation was calculated between log2-transformed aggregated counts for gene selection and all log2-transformed genes in the ndata slot of the sc object. Top 10 genes are listed.")),
+                                                          box(title="Method Description",renderText("Pearson correlation was calculated between log2-transformed aggregated counts (sum) for gene selection and all log2-transformed genes in the ndata slot of the sc object. Top 10 genes are listed.")),
                                                           box(title="Genes used",textOutput("genesSel2"),textOutput("genesExpr2"))
                                                           ),
                                                        fluidRow(
