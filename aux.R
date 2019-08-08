@@ -90,7 +90,7 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
     sc@cpart<-sc@cluster$kpart
     scnew<-sc
     if(numclu!=max(sc@cluster$kpart)){   
-      scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=FALSE,cln=numclu)
+      scnew<-clustexp(sc,rseed=314,FUNcluster="kmedoids",sat=TRUE,cln=numclu)
       scnew<-findoutliers(scnew)
       scnew@cpart<-scnew@cluster$kpart 
     }}else if (pg_choice == "Monocle2"){

@@ -149,6 +149,9 @@ server <- function(input, output, session) {
            output$tsneClu<-renderPlot({
              sc<-values$sc
              get_clu_plot(input$selectformat,sc,input$selectdimred)})
+           output$cluSep<-renderPlot({
+             sc<-values$sc
+             plot_clu_separation(input$selectformat,sc)},width=600,height=600)
            output$silhPlot<-renderPlot({
              sc<-values$sc
              plot_silhouette(input$selectformat,sc)})
