@@ -386,16 +386,17 @@ server <- function(input, output, session) {
                                                 tabPanel(title="Cell map and clustering",
                                                          fluidPage(
                                                            fluidRow(
-                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5,height=800),
-                                                             box(title="Silhoutte Plot",plotOutput("silhPlot"))
-                                                           ),
-                                                           fluidRow(
                                                              box(title="Cell map with cluster assignment",plotOutput("tsneClu"),width=5,height=600),
                                                              box(title="Method Description",renderText(cludesc[input$selectformat])),
-                                                             box(title = "Plot controls",uiOutput("CluCtrl"),uiOutput("selectdimred"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))
+                                                             box(title = "Plot controls",uiOutput("CluCtrl"),uiOutput("selectdimred"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))),
+                                                           fluidRow(
+                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5,height=800),
+                                                             box(title="Silhoutte Plot",plotOutput("silhPlot"))
+                                                           )
+                                                           
                                                          )
 
-                                                        )
+                                                        
                                                 ),
                                                 
                                                 #tabPanel(title="Annotation.Table",
