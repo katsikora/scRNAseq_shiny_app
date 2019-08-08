@@ -9,6 +9,7 @@ load_libs<-function(pg_choice,Rlib){
       library(monocle,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
            } else if (pg_choice == "Seurat3"){
+             library(Rcpp,lib.loc=Rlib)
              library(Seurat,lib.loc=Rlib)
              library(clustree,lib.loc=Rlib)
            }
