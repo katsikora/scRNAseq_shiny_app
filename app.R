@@ -65,12 +65,6 @@ server <- function(input, output, session) {
     output$init_checks_passed<-reactive({values$init_checks_passed()})
     outputOptions(output, "init_checks_passed", suspendWhenHidden = FALSE)
     
-    #waiting_for_click<-reactiveVal()
-    #waiting_for_click(1)
-    #output$waiting_for_click<-reactive({waiting_for_click()})
-    #outputOptions(output, "waiting_for_click", suspendWhenHidden = FALSE)
-    
-    
     observeEvent(input$selectformat,{
     #imports depend on selected format!
     #load packages in function of the input format (or use namespace loading...)
@@ -91,18 +85,16 @@ server <- function(input, output, session) {
 
 ################################
     observe({
-        if(isTruthy(input$file1)){
+        req(isTruthy(input$file1))
         output$adddataset<-renderUI({actionButton(inputId="adddataset", label="Submit dataset")})
-        }
+        #}
     })
     
     
     observeEvent(input$adddataset,{
       ######################################################################################################
       if(values$init_checks_passed()){
-        #waiting_for_click(0)
-        
-      #psel<-c("Monocle"="*.mono.set.RData","RaceID3"="sc.minT*.RData") 
+
       inFormat<-isolate(input$selectformat)
       
        if (!is.null(input$file1)){values$datpath<-isolate(input$file1)$datapath}
@@ -240,6 +232,7 @@ server <- function(input, output, session) {
         ))}
         
        },ignoreInit=TRUE)#end of observe input$submitinput  
+        #}) #end of observe
       
       
           observeEvent(input$selectgenes,{
