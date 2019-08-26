@@ -310,8 +310,8 @@ server <- function(input, output, session) {
             if((input$pwselX!="")&(input$pwselY!="")){
             inpwselXL<-isolate(input$pwselX)
             inpwselYL<-isolate(input$pwselY)}
-            inpwselX<-trimws(unlist(strsplit(inpwselXL,split=";")))
-            inpwselY<-trimws(unlist(strsplit(inpwselYL,split=";")))
+            inpwselX<-trimws(gsub("--","__",unlist(strsplit(inpwselXL,split=";"))))
+            inpwselY<-trimws(gsub("--","__",unlist(strsplit(inpwselYL,split=";"))))
             xtest<-inpwselX[inpwselX %in% rownames(ndata)]
             ytest<-inpwselY[inpwselY %in% rownames(ndata)]
             if(any(!isTruthy(xtest),!isTruthy(ytest))){
