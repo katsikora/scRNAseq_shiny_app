@@ -336,6 +336,27 @@ server <- function(input, output, session) {
                }
          )
          
+         output$get_raceid <- downloadHandler(
+           filename = "raceid3_dataset.RData",
+           content = function(con) {
+             file.copy(from="/data/processing/scRNAseq_shiny_app_example_data/GSE81076_raceid.workspaceR/sc.minT1000.RData", to=con, overwrite =TRUE)
+           }
+         )
+         
+         output$get_monocle <- downloadHandler(
+           filename = "monocle3_dataset.RData",
+           content = function(con) {
+             file.copy(from="/data/processing/scRNAseq_shiny_app_example_data/GSE81076_monocle.workspaceR/minT5000.mono.set.RData", to=con, overwrite =TRUE)
+           }
+         )
+         
+         output$get_seurat <- downloadHandler(
+           filename = "seurat3_dataset.RDS",
+           content = function(con) {
+             file.copy(from="/data/processing/scRNAseq_shiny_app_example_data/GSE75478_seuset.umap.RDS", to=con, overwrite =TRUE)
+           }
+         )
+         
          output$downloadData <- downloadHandler(
            filename = "MyData.RDS",
            content = function(con) {
@@ -359,10 +380,17 @@ server <- function(input, output, session) {
 ############################
     output$resultPanels<-renderUI({myTabs<-list(tabPanel(title="Walkthrough",
                                                       fluidPage(
+                                                        fluidRow(
                                                           box(title="Walkthrough",uiOutput("walkThrough")),
                                                           box(title="Miscellaneous information",textOutput("FAQ")),
-                                                          downloadButton("get_vignette", label = "Download vignette html")
+                                                          downloadButton("get_vignette", label = "Download vignette html")),
+                                                        fluidRow(
+                                                          box(title="Example datasets",width=12,
+                                                              downloadButton("get_raceid",label="Download RaceID3 example dataset"),
+                                                              downloadButton("get_monocle",label="Download Monocle2 example dataset"),
+                                                              downloadButton("get_seurat",label="Download Seurat3 example dataset"))
                                                                )
+                                                      )
                                                           ),
                                                   tabPanel(title="Input Data",
                                                            conditionalPanel(condition=("output.summary_produced"),
