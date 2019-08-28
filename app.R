@@ -427,7 +427,7 @@ server <- function(input, output, session) {
                                                              box(title="Method Description",renderText(cludesc[input$selectformat])),
                                                              box(title = "Plot controls",uiOutput("CluCtrl"),uiOutput("selectdimred"),actionButton(inputId="plotclu",label="Update cluster plots",style = "color: black;background-color:#6495ED"))),
                                                            fluidRow(
-                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),width=5,height=800),
+                                                             box(title="Metrics for cluster number selection",plotOutput("cluSep"),height=800),
                                                              box(title="Silhoutte Plot",plotOutput("silhPlot"))
                                                            )
                                                            
