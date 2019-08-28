@@ -149,7 +149,7 @@ plot_clu_separation<-function(pg_choice,sc){
     plot_rho_delta(sc)
   }else if (pg_choice=="Seurat3"){
     if(length(grep("RNA_snn_res.",colnames(sc[[]])))>1){
-    clustree(sc)}else{plot(0,type='n',axes=FALSE,ann=FALSE)} #,prefix="RNA_snn_res."
+      clustree(sc)}else{plot(0,type='n',axes=FALSE,ann=FALSE)} #,prefix="RNA_snn_res."
   }
 }
 

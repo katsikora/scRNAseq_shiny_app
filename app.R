@@ -140,7 +140,7 @@ server <- function(input, output, session) {
            }else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}}) 
        output$cluSep<-renderPlot({
          sc<-values$sc
-         plot_clu_separation(input$selectformat,sc)},width=600,height=600)
+         plot_clu_separation(input$selectformat,sc)},height=700)
        output$tsneClu<-renderPlot({
          sc<-values$sc
          get_clu_plot(input$selectformat,sc,input$selectdimred)})
@@ -159,7 +159,7 @@ server <- function(input, output, session) {
              get_clu_plot(input$selectformat,sc,input$selectdimred)})
            output$cluSep<-renderPlot({
              sc<-values$sc
-             plot_clu_separation(input$selectformat,sc)},width=600,height=600)
+             plot_clu_separation(input$selectformat,sc)},height=700)#,width=600
            output$silhPlot<-renderPlot({
              sc<-values$sc
              plot_silhouette(input$selectformat,sc)})
