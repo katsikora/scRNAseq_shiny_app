@@ -7,7 +7,7 @@ Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
 .libPaths(Rlib)
 set.seed(314)
 
-options(shiny.maxRequestSize = 500*1024^2)
+options(shiny.maxRequestSize = 1000*1024^2)
 
 library(shinydashboard)#,lib.loc=Rlib,verbose=TRUE
 library(rhandsontable) #,lib.loc=Rlib,verbose=TRUE
