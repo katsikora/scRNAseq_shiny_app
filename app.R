@@ -239,7 +239,8 @@ server <- function(input, output, session) {
           inGenesL<-isolate(input$geneid)
           if(inGenesL!=""){
              inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
-          inGenes<-trimws(gsub("--","__",inGenes))
+          if(!input$selectformat %in% "Seurat3"){inGenes<-gsub("--","__",inGenes)}
+          inGenes<-trimws(inGenes)
           values$inGenes<-inGenes
           output$genesSel<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
           ndata<-isolate(values$ndata)
@@ -275,7 +276,8 @@ server <- function(input, output, session) {
          inGenesL<-isolate(input$geneid2)
          if(inGenesL!=""){
            inGenes<-unique(unlist(strsplit(inGenesL,split=";")))}
-         inGenes<-trimws(gsub("--","__",inGenes))
+         if(!input$selectformat %in% "Seurat3"){inGenes<-gsub("--","__",inGenes)}
+         inGenes<-trimws(inGenes)
          values$inGenes2<-inGenes
          output$genesSel2<-renderText({paste0("Selected genes: ",paste0(inGenes,collapse=" "))})
          ndata<-isolate(values$ndata)
@@ -310,8 +312,11 @@ server <- function(input, output, session) {
             if((input$pwselX!="")&(input$pwselY!="")){
             inpwselXL<-isolate(input$pwselX)
             inpwselYL<-isolate(input$pwselY)}
-            inpwselX<-trimws(gsub("--","__",unlist(strsplit(inpwselXL,split=";"))))
-            inpwselY<-trimws(gsub("--","__",unlist(strsplit(inpwselYL,split=";"))))
+            if(!input$selectformat %in% "Seurat3"){inpwselX<-trimws(gsub("--","__",unlist(strsplit(inpwselXL,split=";"))))
+            inpwselY<-trimws(gsub("--","__",unlist(strsplit(inpwselYL,split=";"))))}else{
+              inpwselX<-trimws(unlist(strsplit(inpwselXL,split=";")))
+              inpwselY<-trimws(unlist(strsplit(inpwselYL,split=";")))
+            }
             xtest<-inpwselX[inpwselX %in% rownames(ndata)]
             ytest<-inpwselY[inpwselY %in% rownames(ndata)]
             if(any(!isTruthy(xtest),!isTruthy(ytest))){
