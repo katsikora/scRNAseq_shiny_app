@@ -9,6 +9,7 @@ set.seed(314)
 
 options(shiny.maxRequestSize = 1000*1024^2)
 
+library(Rcpp,lib.loc=Rlib)
 library(shinydashboard)#,lib.loc=Rlib,verbose=TRUE
 library(rhandsontable) #,lib.loc=Rlib,verbose=TRUE
 library(DT) #,lib.loc=Rlib,verbose=TRUE
@@ -131,12 +132,14 @@ server <- function(input, output, session) {
        output$CluCtrl<-renderUI({tagList(sliderInput("numclu", ifelse(input$selectformat=="Seurat3","Resolution","Number of clusters"),min=ifelse(input$selectformat=="Seurat3",0,1),max=ifelse(input$selectformat=="Seurat3",1,2*cluinit),value=cluinit,round=TRUE))})
        output$selectdimred<-renderUI({
           if(input$selectformat=="Seurat3"){
-            if(isTruthy(grepl("RunUMAP.RNA",names(sc@commands)))) {
+            aa<-sc@active.assay
+            if(isTruthy(grepl(paste0("RunUMAP.",aa),names(sc@commands)))) {
               tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}
             }else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}})
        output$selectdimred2<-renderUI({
          if(input$selectformat=="Seurat3"){
-           if(isTruthy(grepl("RunUMAP.RNA",names(sc@commands)))){tagList(selectInput("selectdimred2","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}
+           aa<-sc@active.assay
+           if(isTruthy(grepl(paste0("RunUMAP.",aa),names(sc@commands)))){tagList(selectInput("selectdimred2","Select dimensionality reduction method.",choices=c("tSNE","UMAP")))}else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}
            }else{tagList(selectInput("selectdimred","Select dimensionality reduction method.",choices=c("tSNE")))}}) 
        output$cluSep<-renderPlot({
          sc<-values$sc

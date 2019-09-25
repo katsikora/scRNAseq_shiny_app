@@ -60,7 +60,7 @@ check_slots<-function(pg_choice,sc){
       res<-FALSE
     }
   }else if (pg_choice == "Seurat3"){
-    if(all(isTruthy(length(sc@commands)>=7),isTruthy(sc@active.assay %in% "RNA"),isTruthy(startsWith(as.character(sc@version),"3")),isTruthy("FindClusters" %in% names(sc@commands)),isTruthy("RunTSNE" %in% names(sc@commands)))){
+    if(all(isTruthy(length(sc@commands)>=7),isTruthy(sc@active.assay %in% "RNA" | sc@active.assay %in% "integrated"),isTruthy(startsWith(as.character(sc@version),"3")),isTruthy("FindClusters" %in% names(sc@commands)),isTruthy("RunTSNE" %in% names(sc@commands)))){
       res<-TRUE
     }else{
       res<-FALSE
@@ -101,8 +101,9 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
     }else if (pg_choice == "Seurat3"){
       #the relevant parameter is resolution rather than number of clusters
       res<-numclu
-      if(paste0("RNA_snn_res.",res) %in% colnames(sc[[]])){
-      sc[["seurat_clusters"]]<-sc[[paste0("RNA_snn_res.",res)]]
+      aa<-sc@active.assay
+      if(paste0(aa,"_snn_res.",res) %in% colnames(sc[[]])){
+      sc[["seurat_clusters"]]<-sc[[paste0(aa,"_snn_res.",res)]]
       Idents(object=sc) <- "seurat_clusters"
       sc@commands$FindClusters@params[["resolution"]]<-as.numeric(res)
       scnew<-sc
@@ -148,7 +149,8 @@ plot_clu_separation<-function(pg_choice,sc){
   }else if (pg_choice=="Monocle2"){
     plot_rho_delta(sc)
   }else if (pg_choice=="Seurat3"){
-    if(length(grep("RNA_snn_res.",colnames(sc[[]])))>1){
+    aa<-sc@active.assay
+    if(length(grep(paste0(aa,"_snn_res."),colnames(sc[[]])))>1){
       clustree(sc)}else{plot(0,type='n',axes=FALSE,ann=FALSE)} #,prefix="RNA_snn_res."
   }
 }
@@ -191,7 +193,7 @@ get_top10<-function(pg_choice,sc){
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
      top10<-as.data.frame(top10,stringsAsFactors=FALSE)
    }else if (pg_choice == "Seurat3"){
-     markers<-FindAllMarkers(object = sc,only.pos = TRUE,min.pct = 0.25,thresh.use = 0.25)
+     markers<-FindAllMarkers(object = sc,only.pos = TRUE,min.pct = 0.25,thresh.use = 0.25,assay="RNA")
      top10 <- markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(10, avg_logFC)
      colnames(top10)[colnames(top10) %in% "cluster"]<-"Cluster"
      colnames(top10)[colnames(top10) %in% "gene"]<-"Gene"
@@ -222,9 +224,9 @@ get_marker_plot<-function(pg_choice,sc,topn,seuset){
     seuset <- ScaleData(object = seuset)
     DoHeatmap(object = seuset,features=genes)}
   }else if (pg_choice == "Seurat3"){
-    VariableFeatures(sc)<-unique(c(VariableFeatures(sc),genes))
-    seuset <- ScaleData(object = sc)
-    DoHeatmap(object = seuset,features=genes)
+    VariableFeatures(sc,assay="RNA")<-unique(c(VariableFeatures(sc,assay="RNA"),genes))
+    seuset <- ScaleData(object = sc,assay="RNA")
+    DoHeatmap(object = seuset,features=genes,assay="RNA")
   }
 }
 
