@@ -1,5 +1,5 @@
 ## app.R ##
-ver_sion<-"1.1.0"
+ver_sion<-"1.0.0"
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
 debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
