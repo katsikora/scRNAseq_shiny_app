@@ -103,7 +103,10 @@ recluster_plot_tsne<-function(pg_choice,sc,numclu){
       res<-numclu
       aa<-sc@active.assay
       if(paste0(aa,"_snn_res.",res) %in% colnames(sc[[]])){
-      sc[["seurat_clusters"]]<-sc[[paste0(aa,"_snn_res.",res)]]
+        if(gsub("'","",sc@version) %in% "3.0.0"){
+          scnew<-FindClusters(sc,resolution=as.numeric(res),random.seed =314)
+          }else{
+      sc[["seurat_clusters"]]<-sc[[paste0(aa,"_snn_res.",res)]]}
       Idents(object=sc) <- "seurat_clusters"
       sc@commands$FindClusters@params[["resolution"]]<-as.numeric(res)
       scnew<-sc

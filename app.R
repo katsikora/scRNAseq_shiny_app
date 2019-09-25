@@ -1,7 +1,7 @@
 ## app.R ##
 ver_sion<-"1.0.0"
 Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
-#debug_path="/var/log/shiny-server"
+debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
 #debug_path="/root/container-logs"
 .libPaths(Rlib)
@@ -156,10 +156,10 @@ server <- function(input, output, session) {
                                "The cells are being reclustered. Please allow (up to) some minutes.",
                                easyClose = TRUE)) 
            sc<-values$sc
-           values$sc<-recluster_plot_tsne(input$selectformat,sc,input$numclu)
-           output$tsneClu<-renderPlot({
+           values$sc<-try(recluster_plot_tsne(input$selectformat,sc,input$numclu),outFile=file.path(debug_path,"recluster.err"))
+           output$tsneClu<-try(renderPlot({
              sc<-values$sc
-             get_clu_plot(input$selectformat,sc,input$selectdimred)})
+             get_clu_plot(input$selectformat,sc,input$selectdimred)}),outFile=file.path(debug_path,"get_clu_plot.err"))
            output$cluSep<-renderPlot({
              sc<-values$sc
              plot_clu_separation(input$selectformat,sc)},height=700)#,width=600
