@@ -21,7 +21,8 @@ ui <- function(request) {dashboardPage(
     dashboardSidebar(tagList(
 
       #selectInput(inputId="genome", label="Select organism", choices=c("PLEASE SELECT A GENOME","Zebrafish [zv10]","Fission yeast","Fruitfly [dm6]","Fruitfly [dm3]","Human [hg37]","Human [hg38]","Mouse [mm9]","Mouse [mm10]"), selected = NULL),#"PLEASE SELECT A GENOME",, selected = NULL
-      selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","RaceID3","Monocle2","Seurat3"), selected = NULL),
+#"RaceID3","Monocle2",
+      selectInput(inputId="selectformat",label="Select R package",choices=c("Please select a package","Seurat3"), selected = NULL),
       fileInput('file1', 'Choose file to upload',accept = c('.RData','.RDS')),
       uiOutput("adddataset"),
       #actionButton(inputId="adddataset", label="Submit dataset"),
