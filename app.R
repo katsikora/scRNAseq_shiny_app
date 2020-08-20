@@ -1,6 +1,7 @@
 ## app.R ##
 ver_sion<-"1.0.0"
-Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
+#Rlib="/data/manke/sikora/shiny_apps/Rlibs3.5.0_bioc3.7"
+Rlib="/rstudio/galaxy/.rstudio/R/x86_64-pc-linux-gnu-library/3.6"
 debug_path="/var/log/shiny-server"
 #debug_path="/data/manke/sikora/shiny_apps/debug"
 #debug_path="/root/container-logs"
@@ -9,7 +10,6 @@ set.seed(314)
 
 options(shiny.maxRequestSize = 1000*1024^2)
 
-library(Rcpp,lib.loc=Rlib)
 library(shinydashboard)#,lib.loc=Rlib,verbose=TRUE
 library(rhandsontable) #,lib.loc=Rlib,verbose=TRUE
 library(DT) #,lib.loc=Rlib,verbose=TRUE

@@ -9,7 +9,7 @@ load_libs<-function(pg_choice,Rlib){
       library(monocle,lib.loc=Rlib)
       library(Seurat,lib.loc=Rlib)
            } else if (pg_choice == "Seurat3"){
-             library(Rcpp,lib.loc=Rlib)
+             #library(Rcpp,lib.loc=Rlib)
              library(Seurat,lib.loc=Rlib)
              library(clustree,lib.loc=Rlib)
            }
@@ -17,7 +17,7 @@ load_libs<-function(pg_choice,Rlib){
   library(ggplot2)
   library(gplots)
   library(RColorBrewer)
-  library(cluster,lib.loc=Rlib)
+  library(cluster)
 }
 
 
@@ -142,7 +142,7 @@ plot_silhouette<-function(pg_choice,sc){
         m<-as.integer(sc[[]]$seurat_clusters)
         names(m)<-colnames(dp)
       }
-  si<-silhouette(m,dp)
+  si<-cluster::silhouette(m,dp)
   plot(si,col=1:max(m), border=NA,main=sprintf("Silhouette plot for %s clusters",max(m)))
 }
 
@@ -207,6 +207,8 @@ get_top10<-function(pg_choice,sc){
 }
 
 get_marker_plot<-function(pg_choice,sc,topn,seuset){
+  brewer.pal.info<-RColorBrewer::brewer.pal.info
+  brewer.pal<-RColorBrewer::brewer.pal
   qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
   col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
   set.seed(314)
